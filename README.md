@@ -8,6 +8,22 @@ PipeCore is a custom pipelined CPU simulator inspired by CISC, featuring:
 - port-mapped I/O
 - a custom high-level programming language and translator
 
+## Characteristics
+
+| Property | Implementation |
+|---------|---------------|
+| ISA | CISC |
+| Control Unit | Hardwired |
+| Memory Model | Von Neumann |
+| Execution Precision | Tick-accurate |
+| Machine Code | Binary |
+| I/O Model | Trap-based |
+| I/O Addressing | Port-mapped |
+| String Format | Pascal strings |
+| Pipeline | 3-stage |
+
+---
+
 ## Project Structure
 
 - src/ — implementation
