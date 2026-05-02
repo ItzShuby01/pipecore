@@ -94,7 +94,7 @@ Output is a buffered stream of symbols.
 PipeCore supports 5 addressing modes.
 
 
-**1. Immediate Addressing**
+### 1. Immediate Addressing
 
 Operand is embedded directly in the instruction.
 
@@ -110,7 +110,7 @@ Example:
 MOV #10, R1
 ```
 
-**2. Register Addressing**
+### 2. Register Addressing
 
 Operand is stored in a register.
 
@@ -127,7 +127,7 @@ ADD R1, R2, R3
 ```
 
 
-**3. Direct Memory Addressing**
+### 3. Direct Memory Addressing
 
 The instruction specifies the memory address.
 
@@ -143,7 +143,7 @@ Example:
 LOAD [1024], R1
 ```
 
-**4. Register Indirect Addressing**
+### 4. Register Indirect Addressing
 
 The specified register holds the memory address of the operand
 
@@ -160,13 +160,7 @@ Example:
 LOAD [R2], R1
 ```
 
-Execution:
-
-CPU first resolves address from register, then accesses memory.
-
----
-
-**5. Indexed Addressing**
+### 5. Indexed Addressing
 
 The effective address is computed using a base register and an offset.
 
@@ -336,7 +330,7 @@ DEC dst
 
 #### CMP
 
-Compares 2 operands and only updates FLAGS without storing the result.
+Compares 2 operands and only updates `FLAGS` without storing the result.
 
 Syntax:
 

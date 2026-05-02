@@ -2,13 +2,9 @@
 
 ## Register Model
 
-The processor contains 8 register : 4 general-purpose registers and 4 special-purpose registers.
-
----
+The processor contains 8 registers : 4 general-purpose registers and 4 special-purpose registers.
 
 ## General-Purpose Registers
-
-
 - R0 (preferably used as a temporary register during arithmetic operations)
 - R1 
 - R2 
@@ -18,7 +14,7 @@ All four registers can be used interchangeably in arithmetic and memory operatio
 
 The translator often uses R0 for intermediate results when evaluating expressions. However, this is just a convention — PipeCore itself does not enforce any accumulator-based limitations.
 
----
+
 
 ## Special-Purpose Registers
 
@@ -33,8 +29,6 @@ It is updated during:
 - procedure calls
 - interrupt handling
 
----
-
 ### Stack Pointer (SP)
 
 Always points to top of the stack.
@@ -46,8 +40,6 @@ Used for:
 - saving interrupt state
 - interrupt restoration
 
----
-
 ### Instruction Register (IR)
 
 Stores the instruction currently being executed.
@@ -57,7 +49,6 @@ Used during:
 - decode stage
 - execution stage
 - inspection of pipeline state
----
 
 ### FLAGS Register
 
@@ -71,11 +62,3 @@ Keeps track of processor status
 | O | Overflow |
 | I | Interrupt Enable |
 
----
-
-## Why this Register Design?
-
-The chosen design keeps the processor simple, but still flexible enough for real use: 
-- flexible enough to handle typical CISC operations.
-- works cleanly with pipelined execution
-- support for interrupts
