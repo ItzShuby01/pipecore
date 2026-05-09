@@ -22,14 +22,21 @@ PipeCore is a custom pipelined CPU simulator inspired by CISC, featuring:
 | String Format | Pascal strings |
 | Pipeline | 3-stage |
 
----
-
 ## Project Structure
 
-- src/ — implementation
-- tests/ — golden tests
-- .github/ — CI configuration
+    High-Level ALG Language
+        |                                              Interrupt-Driven Input (Trap via P0)
+        |                           PipeCore ISA                        |
+        |                                 |                             v
+        |     +--------------+                           +-----------------------------+
+   -----*---->|  Translator  |------------*------------> |       CPU Simulator         |----> Execution Journal
+    Algorithm +--------------+       Machine Code        | (Unified Von Neumann Memory)|               
+                                       (Binary)          +-----------------------------+
+                                                                        |
+                                                                        v
+                                                                 Output (Port P1)
+
 
 ## Status
 
-🚧 In development
+In development
