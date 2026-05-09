@@ -478,3 +478,35 @@ Syntax:
 ```asm
 HALT
 ```
+
+## Example Program
+
+`print(A)`
+
+### Assembly
+
+```asm
+MOV #65, R1
+OUT P1, R1
+HALT
+```
+
+### Binary Representation
+Opcode, register codes, and operand encodings are specified in [encoding.md](./encoding.md).
+
+```text
+0000: 10201000    ; MOV header
+0001: 00000041    ; immediate value 65 ('A')
+0002: 00000001    ; destination R1
+
+0003: 51211000    ; OUT header
+0004: 00000001    ; output port P1
+0005: 00000001    ; source R1
+
+0006: 01000000    ; HALT
+```
+
+### Expected Output
+```
+A
+```
