@@ -24,6 +24,7 @@ PipeCore is a custom pipelined CPU simulator inspired by CISC, featuring:
 
 ## Project Structure
 
+```text
     High-Level ALG Language
         |                                              Interrupt-Driven Input (Trap via P0)
         |                           PipeCore ISA                        |
@@ -35,7 +36,7 @@ PipeCore is a custom pipelined CPU simulator inspired by CISC, featuring:
                                                                         |
                                                                         v
                                                                  Output (Port P1)
-
+```
 
 ## Status
 
