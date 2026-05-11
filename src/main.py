@@ -1,6 +1,6 @@
-from src.simulator.cpu import CPU
-from src.simulator.decoder import decode_opcode
-from src.simulator.instructions import execute
+from src.cpu.datapath import CPU
+from src.isa.decoder import decode_opcode
+from src.cpu.control_unit import execute
 from src.common.enums import Opcode
 
 

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from src.simulator.cpu import CPU
+from src.cpu.datapath import CPU
 from src.common.enums import Opcode
 
 

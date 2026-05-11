@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from src.simulator.memory import Memory
+from src.memory.memory import Memory
 from src.common.enums import Register
 
 
