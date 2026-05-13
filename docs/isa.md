@@ -179,6 +179,8 @@ LOAD [R1 + 4], R2
 ```
 
 ## Instructions
+Uses **AT&T** Syntax
+
 ### 1. Data Movement Instructions
 
 #### MOV
