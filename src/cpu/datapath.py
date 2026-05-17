@@ -26,3 +26,9 @@ class CPU:
         self.registers[Register.IR] = instruction
         self.registers[Register.IP] += 1
         return instruction
+
+    def read_register(self, reg_id: int) -> int:
+        return self.registers[Register(reg_id)]
+
+    def write_register(self, reg_id: int, value: int) -> None:
+        self.registers[Register(reg_id)] = value & 0xFFFFFFFF
