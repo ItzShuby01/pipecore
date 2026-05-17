@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from src.memory.memory import Memory
-from src.common.enums import Register
+from src.common.enums import Register, IOPort
 
 
 class CPU:
@@ -20,6 +20,10 @@ class CPU:
         }
 
         self.running = True
+
+        self.output_ports: dict[IOPort, list[str]] = {
+            IOPort.P1: []
+        }
 
     def fetch(self) -> int:
         instruction = self.memory.read(self.registers[Register.IP])

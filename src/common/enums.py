@@ -49,3 +49,9 @@ class Register(IntEnum):
     SP = 5
     IR = 6
     FLAGS = 7
+
+
+class IOPort(IntEnum):
+    P0 = 0x0
+    P1 = 0x1
+    P2 = 0x2
