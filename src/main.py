@@ -22,7 +22,8 @@ def main() -> None:
 
     print("Registers Final State:")
     for reg in Register:
-        print(f"{reg.name}: {cpu.registers[reg]}")
+        val = cpu.registers[reg]
+        print(f"  {reg.name:<5}: {val:<10} (0x{val:08X})")
 
     print("PipeCore halted successfully")
 
