@@ -14,6 +14,10 @@ def execute(cpu: CPU, instruction: Instruction) -> None:
         execute_out(cpu, instruction)
     elif instruction.opcode == Opcode.ADD:
         execute_add(cpu, instruction)
+    elif instruction.opcode == Opcode.CMP:  # <--- Wire up CMP
+        execute_cmp(cpu, instruction)
+    elif instruction.opcode == Opcode.JNZ:  # <--- Wire up JNZ
+        execute_jnz(cpu, instruction)
     elif instruction.opcode == Opcode.NOP:
         pass
     else:
@@ -92,3 +96,39 @@ def execute_add(cpu: CPU, instruction: Instruction) -> None:
         flags |= (1 << 1)  # Set N
 
     cpu.write_register(int(Register.FLAGS), flags)
+
+
+def execute_cmp(cpu: CPU, instruction: Instruction) -> None:
+    if len(instruction.operands) < 2:
+        raise ValueError("CMP requires two operands")
+
+    src1, src2 = instruction.operands[0], instruction.operands[1]
+    val1 = src1.value if src1.mode == AddressingMode.IMMEDIATE else cpu.read_register(
+        src1.value)
+    val2 = src2.value if src2.mode == AddressingMode.IMMEDIATE else cpu.read_register(
+        src2.value)
+
+    result = (val1 - val2) & 0xFFFFFFFF
+
+    flags = 0
+    if result == 0:
+        flags |= (1 << 0)  # Set Z
+    if result & 0x80000000:
+        flags |= (1 << 1)  # Set N
+
+    cpu.write_register(int(Register.FLAGS), flags)
+
+
+def execute_jnz(cpu: CPU, instruction: Instruction) -> None:
+    if len(instruction.operands) < 1:
+        raise ValueError("JNZ requires a target address operand")
+
+    target_operand = instruction.operands[0]
+    target_address = target_operand.value if target_operand.mode == AddressingMode.IMMEDIATE else cpu.read_register(
+        target_operand.value)
+
+    flags = cpu.read_register(int(Register.FLAGS))
+    z_flag = flags & (1 << 0)
+
+    if not z_flag:
+        cpu.write_register(int(Register.IP), target_address)
