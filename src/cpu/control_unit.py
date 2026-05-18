@@ -14,10 +14,12 @@ def execute(cpu: CPU, instruction: Instruction) -> None:
         execute_out(cpu, instruction)
     elif instruction.opcode == Opcode.ADD:
         execute_add(cpu, instruction)
-    elif instruction.opcode == Opcode.CMP:  # <--- Wire up CMP
+    elif instruction.opcode == Opcode.CMP:
         execute_cmp(cpu, instruction)
-    elif instruction.opcode == Opcode.JNZ:  # <--- Wire up JNZ
+    elif instruction.opcode == Opcode.JNZ:
         execute_jnz(cpu, instruction)
+    elif instruction.opcode == Opcode.JMP:
+        execute_jmp(cpu, instruction)
     elif instruction.opcode == Opcode.NOP:
         pass
     else:
@@ -28,7 +30,7 @@ def execute(cpu: CPU, instruction: Instruction) -> None:
 def execute_mov(cpu: CPU, instruction: Instruction) -> None:
     if len(instruction.operands) < 2:
         raise ValueError(
-            "MOV requires at least source and destination operand")
+            "MOV requires at least source and destination operands")
 
     src = instruction.operands[0]
     dst = instruction.operands[1]
@@ -49,7 +51,7 @@ def execute_mov(cpu: CPU, instruction: Instruction) -> None:
 
 def execute_out(cpu: CPU, instruction: Instruction) -> None:
     if len(instruction.operands) < 2:
-        raise ValueError("OUT requires a port operand and a source operand")
+        raise ValueError("OUT requires port and source operands")
 
     port_operand = instruction.operands[0]
     src_operand = instruction.operands[1]
@@ -121,7 +123,7 @@ def execute_cmp(cpu: CPU, instruction: Instruction) -> None:
 
 def execute_jnz(cpu: CPU, instruction: Instruction) -> None:
     if len(instruction.operands) < 1:
-        raise ValueError("JNZ requires a target address operand")
+        raise ValueError("JNZ requires target address")
 
     target_operand = instruction.operands[0]
     target_address = target_operand.value if target_operand.mode == AddressingMode.IMMEDIATE else cpu.read_register(
@@ -132,3 +134,13 @@ def execute_jnz(cpu: CPU, instruction: Instruction) -> None:
 
     if not z_flag:
         cpu.write_register(int(Register.IP), target_address)
+
+
+def execute_jmp(cpu: CPU, instruction: Instruction) -> None:
+    if len(instruction.operands) < 1:
+        raise ValueError("JMP requires target address")
+
+    target_operand = instruction.operands[0]
+    target_address = target_operand.value if target_operand.mode == AddressingMode.IMMEDIATE else cpu.read_register(
+        target_operand.value)
+    cpu.write_register(int(Register.IP), target_address)
