@@ -1,7 +1,7 @@
 from src.cpu.datapath import CPU
 from src.isa.decoder import decode
 from src.cpu.control_unit import execute
-from src.common.enums import Register, IOPort
+from src.common.enums import Register
 
 
 def main() -> None:
