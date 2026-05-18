@@ -22,6 +22,10 @@ def execute(cpu: CPU, instruction: Instruction) -> None:
         execute_jmp(cpu, instruction)
     elif instruction.opcode == Opcode.NOP:
         pass
+    elif instruction.opcode == Opcode.PUSH:
+        execute_push(cpu, instruction)
+    elif instruction.opcode == Opcode.POP:
+        execute_pop(cpu, instruction)
     else:
         raise NotImplementedError(
             f"Opcode {instruction.opcode} not implemented")
@@ -124,11 +128,9 @@ def execute_cmp(cpu: CPU, instruction: Instruction) -> None:
 def execute_jnz(cpu: CPU, instruction: Instruction) -> None:
     if len(instruction.operands) < 1:
         raise ValueError("JNZ requires target address")
-
     target_operand = instruction.operands[0]
     target_address = target_operand.value if target_operand.mode == AddressingMode.IMMEDIATE else cpu.read_register(
         target_operand.value)
-
     flags = cpu.read_register(int(Register.FLAGS))
     z_flag = flags & (1 << 0)
 
@@ -139,8 +141,36 @@ def execute_jnz(cpu: CPU, instruction: Instruction) -> None:
 def execute_jmp(cpu: CPU, instruction: Instruction) -> None:
     if len(instruction.operands) < 1:
         raise ValueError("JMP requires target address")
-
     target_operand = instruction.operands[0]
     target_address = target_operand.value if target_operand.mode == AddressingMode.IMMEDIATE else cpu.read_register(
         target_operand.value)
     cpu.write_register(int(Register.IP), target_address)
+
+
+def execute_push(cpu: CPU, instruction: Instruction) -> None:
+    if len(instruction.operands) < 1:
+        raise ValueError("PUSH requires a source operand")
+    src = instruction.operands[0]
+    value = src.value if src.mode == AddressingMode.IMMEDIATE else cpu.read_register(
+        src.value)
+    current_sp = cpu.read_register(int(Register.SP))
+    new_sp = (current_sp - 1) & 0xFFFF  # --SP
+    cpu.write_register(int(Register.SP), new_sp)
+
+    cpu.memory.write(new_sp, value)
+
+
+def execute_pop(cpu: CPU, instruction: Instruction) -> None:
+    if len(instruction.operands) < 1:
+        raise ValueError("POP requires destination register operand")
+    dst = instruction.operands[0]
+    if dst.mode != AddressingMode.REGISTER:
+        raise NotImplementedError("POP destination must be register")
+    current_sp = cpu.read_register(int(Register.SP))
+    if current_sp == 0xFFFF:
+        raise IndexError("Stack Underflow Error !")
+    value = cpu.memory.read(current_sp)
+    cpu.write_register(dst.value, value)
+
+    new_sp = (current_sp + 1) & 0xFFFF  # SP++
+    cpu.write_register(int(Register.SP), new_sp)

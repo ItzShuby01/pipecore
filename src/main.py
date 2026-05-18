@@ -7,38 +7,26 @@ from src.common.enums import Register, IOPort
 def main() -> None:
     cpu = CPU()
 
-    # MOV #67, R1
+    # MOV #1337, R1
     cpu.memory.write(0x0040, 0x10201000)
-    cpu.memory.write(0x0041, 67)
+    cpu.memory.write(0x0041, 1337)
     cpu.memory.write(0x0042, 1)
 
-    # MOV #64, R2
-    cpu.memory.write(0x0043, 0x10201000)
-    cpu.memory.write(0x0044, 64)
-    cpu.memory.write(0x0045, 2)
+    # PUSH R1
+    cpu.memory.write(0x0043, 0x13110000)
+    cpu.memory.write(0x0044, 1)
 
-    # OUT P1, R1
-    cpu.memory.write(0x0046, 0x51201000)
-    cpu.memory.write(0x0047, int(IOPort.P1))
-    cpu.memory.write(0x0048, 1)
+    # MOV #0, R1
+    cpu.memory.write(0x0045, 0x10201000)
+    cpu.memory.write(0x0046, 0)
+    cpu.memory.write(0x0047, 1)
 
-    # ADD R1, #-1, R1
-    cpu.memory.write(0x0049, 0x20310100)
-    cpu.memory.write(0x004A, 1)
-    cpu.memory.write(0x004B, 0xFFFFFFFF)
-    cpu.memory.write(0x004C, 1)
-
-    # CMP R1, R2
-    cpu.memory.write(0x004D, 0x30211000)
-    cpu.memory.write(0x004E, 1)
-    cpu.memory.write(0x004F, 2)
-
-    # JNZ 0x0046
-    cpu.memory.write(0x0050, 0x33100000)
-    cpu.memory.write(0x0051, 0x0046)      # Loop Start target address location
+    # POP R1
+    cpu.memory.write(0x0048, 0x14110000)
+    cpu.memory.write(0x0049, 1)
 
     # HALT
-    cpu.memory.write(0x0052, 0x01000000)
+    cpu.memory.write(0x004A, 0x01000000)
 
     while cpu.running:
         word = cpu.fetch()
@@ -54,6 +42,8 @@ def main() -> None:
     output_string = "".join(cpu.output_ports[IOPort.P1])
     print(f"Port {IOPort.P1.name} Output: '{output_string}'")
 
+    print("\n--- Stack Memory ---")
+    print(f"Value left at 0xFFFE: {cpu.memory.read(0xFFFE)}")
     print("PipeCore halted successfully")
 
 
