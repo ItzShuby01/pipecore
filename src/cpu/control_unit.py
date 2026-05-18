@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from src.cpu.datapath import CPU
-from src.common.enums import Opcode, AddressingMode, IOPort
+from src.common.enums import Opcode, AddressingMode, IOPort, Register
 from src.isa.instruction import Instruction
 
 
@@ -12,6 +12,8 @@ def execute(cpu: CPU, instruction: Instruction) -> None:
         execute_mov(cpu, instruction)
     elif instruction.opcode == Opcode.OUT:
         execute_out(cpu, instruction)
+    elif instruction.opcode == Opcode.ADD:
+        execute_add(cpu, instruction)
     elif instruction.opcode == Opcode.NOP:
         pass
     else:
@@ -62,3 +64,31 @@ def execute_out(cpu: CPU, instruction: Instruction) -> None:
         cpu.output_ports[port_id].append(char)
     else:
         cpu.output_ports[port_id] = [char]
+
+
+def execute_add(cpu: CPU, instruction: Instruction) -> None:
+    if len(instruction.operands) < 3:
+        raise ValueError("ADD requires three operands: src1, src2, dst")
+
+    src1, src2, dst = instruction.operands[0], instruction.operands[1], instruction.operands[2]
+
+    val1 = src1.value if src1.mode == AddressingMode.IMMEDIATE else cpu.read_register(
+        src1.value)
+    val2 = src2.value if src2.mode == AddressingMode.IMMEDIATE else cpu.read_register(
+        src2.value)
+
+    result = (val1 + val2) & 0xFFFFFFFF
+
+    if dst.mode == AddressingMode.REGISTER:
+        cpu.write_register(dst.value, result)
+    else:
+        raise NotImplementedError("ADD destination must be a register")
+
+    flags = 0
+    if result == 0:
+        flags |= (1 << 0)  # Set Z
+
+    if result & 0x80000000:
+        flags |= (1 << 1)  # Set N
+
+    cpu.write_register(int(Register.FLAGS), flags)

@@ -12,13 +12,19 @@ def main() -> None:
     cpu.memory.write(0x0041, 65)
     cpu.memory.write(0x0042, 1)
 
-    # OUT P1, R1
-    cpu.memory.write(0x0043, 0x51201000)
-    cpu.memory.write(0x0044, int(IOPort.P1))
-    cpu.memory.write(0x0045, 1)
+    # ADD R1, #5, R2
+    cpu.memory.write(0x0043, 0x20310100)
+    cpu.memory.write(0x0044, 1)
+    cpu.memory.write(0x0045, 5)
+    cpu.memory.write(0x0046, 2)
+
+    # OUT P1, R2
+    cpu.memory.write(0x0047, 0x51201000)
+    cpu.memory.write(0x0048, int(IOPort.P1))
+    cpu.memory.write(0x0049, 2)
 
     # HALT
-    cpu.memory.write(0x0046, 0x01000000)
+    cpu.memory.write(0x004A, 0x01000000)
 
     while cpu.running:
         word = cpu.fetch()
