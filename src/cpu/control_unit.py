@@ -26,6 +26,10 @@ def execute(cpu: CPU, instruction: Instruction) -> None:
         execute_push(cpu, instruction)
     elif instruction.opcode == Opcode.POP:
         execute_pop(cpu, instruction)
+    elif instruction.opcode == Opcode.CALL:
+        execute_call(cpu, instruction)
+    elif instruction.opcode == Opcode.RET:
+        execute_ret(cpu, instruction)
     else:
         raise NotImplementedError(
             f"Opcode {instruction.opcode} not implemented")
@@ -174,3 +178,31 @@ def execute_pop(cpu: CPU, instruction: Instruction) -> None:
 
     new_sp = (current_sp + 1) & 0xFFFF  # SP++
     cpu.write_register(int(Register.SP), new_sp)
+
+
+def execute_call(cpu: CPU, instruction: Instruction) -> None:
+    if len(instruction.operands) < 1:
+        raise ValueError("CALL requires target address operand")
+    target_operand = instruction.operands[0]
+    target_address = target_operand.value if target_operand.mode == AddressingMode.IMMEDIATE else cpu.read_register(
+        target_operand.value)
+    return_address = cpu.read_register(int(Register.IP))
+
+    current_sp = cpu.read_register(int(Register.SP))
+    new_sp = (current_sp - 1) & 0xFFFF
+    cpu.write_register(int(Register.SP), new_sp)
+    cpu.memory.write(new_sp, return_address)
+
+    cpu.write_register(int(Register.IP), target_address)
+
+
+def execute_ret(cpu: CPU, instruction: Instruction) -> None:
+    current_sp = cpu.read_register(int(Register.SP))
+    if current_sp == 0xFFFF:
+        raise IndexError(
+            "Stack Underflow Error: RET called but stack is empty!")
+    return_address = cpu.memory.read(current_sp)
+
+    new_sp = (current_sp + 1) & 0xFFFF
+    cpu.write_register(int(Register.SP), new_sp)
+    cpu.write_register(int(Register.IP), return_address)
