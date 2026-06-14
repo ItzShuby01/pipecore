@@ -29,7 +29,7 @@ Example:
 | Interrupt | Vector Address |
 |----------|----------------|
 | INT0 | 0x0000 |
-| INT1 | 0x0004 |
+| INT1 | 0x0001 |
 
 
 ## Program Code
