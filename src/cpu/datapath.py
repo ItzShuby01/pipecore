@@ -25,6 +25,8 @@ class CPU:
             IOPort.P1: []
         }
 
+        self.interrupt_asserted: int | None = None
+
     def fetch(self) -> int:
         instruction = self.memory.read(self.registers[Register.IP])
         self.registers[Register.IR] = instruction

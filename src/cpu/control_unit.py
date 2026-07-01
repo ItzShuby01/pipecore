@@ -30,6 +30,8 @@ def execute(cpu: CPU, instruction: Instruction) -> None:
         execute_call(cpu, instruction)
     elif instruction.opcode == Opcode.RET:
         execute_ret(cpu, instruction)
+    elif instruction.opcode == Opcode.IRET:
+        execute_iret(cpu, instruction)
     else:
         raise NotImplementedError(
             f"Opcode {instruction.opcode} not implemented")
@@ -206,3 +208,17 @@ def execute_ret(cpu: CPU, instruction: Instruction) -> None:
     new_sp = (current_sp + 1) & 0xFFFF
     cpu.write_register(int(Register.SP), new_sp)
     cpu.write_register(int(Register.IP), return_address)
+
+
+def execute_iret(cpu: CPU, instruction: Instruction) -> None:
+    current_sp = cpu.read_register(int(Register.SP))
+
+    return_address = cpu.memory.read(current_sp)
+    current_sp = (current_sp + 1) & 0xFFFF
+    cpu.write_register(int(Register.IP), return_address)
+
+    saved_flags = cpu.memory.read(current_sp)
+    current_sp = (current_sp + 1) & 0xFFFF
+    cpu.write_register(int(Register.FLAGS), saved_flags)
+
+    cpu.write_register(int(Register.SP), current_sp)
