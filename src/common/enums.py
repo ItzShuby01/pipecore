@@ -21,8 +21,8 @@ class Opcode(IntEnum):
     JMP = 0x31
     JZ = 0x32
     JNZ = 0x33
-    JL = 0x34
-    JG = 0x35
+    JLT = 0x34
+    JGT = 0x35
     CALL = 0x40
     RET = 0x41
     IRET = 0x42

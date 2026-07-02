@@ -133,11 +133,11 @@ Layout:
       <td>0x33</td>
     </tr>
     <tr>
-      <td>JL</td>
+      <td>JLT</td>
       <td>0x34</td>
     </tr>
     <tr>
-      <td>JG</td>
+      <td>JGT</td>
       <td>0x35</td>
     </tr>
     <tr>
