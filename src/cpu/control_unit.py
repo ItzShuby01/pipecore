@@ -288,6 +288,11 @@ def execute_iret(cpu: CPU, instruction: Instruction) -> None:
 
     cpu.write_register(int(Register.SP), current_sp)
 
+    print(f"[DEBUG IRET]: Popping from Stack -> New SP: {current_sp:#06x}")
+    print(f"[DEBUG IRET]: Restored IP from Stack: {return_address:#06x}")
+    print(
+        f"[DEBUG IRET]: Actual CPU IP Register after write: {cpu.read_register(int(Register.IP)):#06x}")
+
 
 def execute_in(cpu: CPU, instruction: Instruction) -> None:
     port_operand = instruction.operands[0]
