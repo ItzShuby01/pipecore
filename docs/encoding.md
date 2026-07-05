@@ -34,7 +34,7 @@ Layout:
 | 19–16 | Addressing Mode 1 |
 | 15–12 | Addressing Mode 2 |
 | 11–8 | Addressing Mode 3 |
-| 7–0 | Flags |
+| 7–0 | Reserved |
 
 ### Example Encodings
 
