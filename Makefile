@@ -1,10 +1,12 @@
 .PHONY: install run lint typecheck test check all clean
 
+ARGS ?=
+
 install:
 	pip install -e ".[dev]"
 
 run:
-	python -m src.main
+	python -m src.main $(ARGS)
 
 lint:
 	ruff check .
