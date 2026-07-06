@@ -5,7 +5,6 @@
 PipeCore is a **32-bit pipelined processor based on CISC architecture and built around Von Neumann Memory Model. It uses hardwired control logic and supports interrupt-driven port-mapped I/O**
 
 
-
 ## Pipeline Structure
 
 PipeCore uses a 3-stage pipeline.
@@ -37,57 +36,72 @@ PipeCore uses a 3-stage pipeline.
 - writes results back to registers
 - executes I/O operations
 
-
-
-## Interrupt Model
-
-PipeCore uses vectored hardware interrupts.
-
-What happens on an interrupt:
-
-1. Current instruction completes
-2. IP is pushed onto stack
-3. FLAGS is pushed onto stack
-4. Interrupt disabled
-5. Handler / ISR (Interrupt Service Routine) address loaded from IVT is set as new IP
-6. ISR executes
-7. IRET restores state
-
-
-
 ## Port-Mapped I/O
 
 PipeCore uses a simple port-based I/O :
 
 | Port | Purpose |
 |------|---------|
-| P0 | Input |
-| P1 | Output |
+| P0 | Input Data|
+| P1 | Output Data|
 | P2 | Status |
 
+### P2 Status Register
 
+| Bit [1] | Name | Value | Description |
+|---|---|---|---|
+| 0 | Input Ready | 0 | No data is available |
+| | | 1 | Unread input is available . |
 
 ## Input Model
 
-Input is **event-driven.**
+Input is **via interrupt**
 
-Each event is represented as:
+The simulator maintains an input schedule:
 
-(addressed_tick, value)
+**[(tick, token)]**
 
 Example:
 
-```(10, 'A')```
+```(10, 'A') = At tick 10, value 'A' becomes available.```
 
-At tick 10, value 'A' becomes available.
 
+Input event occurs when the current simulation tick reaches the scheduled tick. When it happens, the similator does these:
+
+• writes the token to input port **P0**
+
+• updates **P2** status port
+
+• asserts an interrupt request
+
+**NB:** The CPU is unaware of the schedule.
+
+
+
+Then the processor
+
+
+1. Completes the current instruction.
+
+2. Pushes IP.
+
+3. Pushes FLAGS.
+
+4. Disables interrupt (i.e sets ```FLAGS.I = 0```).
+
+5. Loads the Input Event ISR address from IVT.
+
+6. Executes the ISR.
+
+7. Returns using IRET.
 
 
 ## Output Model
 
 Output is a buffered stream of symbols.
-- Each OUT instruction appends one value
-- The output buffer represents the program’s final output
+- Each **OUT** instruction appends one value to the output buffer.
+- The output buffer represents the program’s final output.
+- The simulator prints the complete output buffer when execution terminates.
 
 ## Addressing Modes
 

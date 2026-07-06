@@ -21,6 +21,16 @@ Supported sizes:
 
 Every instruction starts with a fixed 32-bit header, followed by zero or more operand words.
 
+The decoder first reads the header to determine:
+
+• opcode
+
+• number of operands
+
+• addressing modes
+
+It then fetches the required operand words.
+
 Layout:
 
 `[ Header (32 bits) ] [ Operand 1 ] [ Operand 2 ] [ Operand 3 ]`

@@ -14,22 +14,24 @@ Machine word size: **32 bits**
 
 | Address Range | Purpose |
 |--------------|---------|
-| 0x0000 – 0x003F | Interrupt Vector Table (IVT)|
+| 0x0000 – 0x003F | IVT|
 | 0x0040 – 0x0FFF | Program Code |
 | 0x1000 – 0x7FFF | Static Data / Heap |
 | 0x8000 – 0xFFFF | Stack |
 
 
-## Interrupt Vector Table IVT
+## Interrupt Vector Table (IVT)
 
 Contains addresses of the Interrupt Service Routines (ISRs) / interrupt handlers.
 
+Each vector contains the address of one ISR.
+
 Example:
 
-| Interrupt | Vector Address |
-|----------|----------------|
-| INT0 | 0x0000 |
-| INT1 | 0x0001 |
+| Interrupt | Vector Address | Description|
+|----------|----------------|--------------|
+| INT0 | 0x0000 | Input Trap ISR
+
 
 
 ## Program Code
