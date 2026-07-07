@@ -1,21 +1,32 @@
 from __future__ import annotations
+
 from src.simulator.simulator import Simulator
 
 
 def main() -> None:
     main_program = """
-    MOV #10, R1
-    NOP
-    HALT
+    LOOP:
+        NOP
+        JMP LOOP
     """
 
     isr_program = """
-    MOV #255, R3
+    IN P0, R1
+    OUT P1, R1
     IRET
     """
 
+    schedule = [
+        (5, 'H'),
+        (10, 'i')
+    ]
+
     simulator = Simulator()
-    simulator.initialize_environment(main_program, isr_program)
+    simulator.initialize_environment(
+        main_source=main_program,
+        isr_source=isr_program,
+        input_schedule=schedule
+    )
     simulator.run()
     simulator.print_report()
 

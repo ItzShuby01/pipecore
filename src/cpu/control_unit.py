@@ -3,6 +3,7 @@ from __future__ import annotations
 from src.cpu.datapath import CPU
 from src.common.enums import Opcode, AddressingMode, IOPort, Register
 from src.isa.instruction import Instruction, Operand
+import sys
 
 
 def read_operand(cpu: CPU, operand: Operand) -> int:
@@ -273,42 +274,55 @@ def execute_ret(cpu: CPU, instruction: Instruction) -> None:
 
 
 def execute_iret(cpu: CPU, instruction: Instruction) -> None:
-    """Pops state in strict inverse order of hardware interrupt generation."""
+    """Pops state in strict inverse order of trap generation."""
     current_sp = cpu.read_register(int(Register.SP))
+    is_verbose = "verbose" in sys.argv or "--verbose" in sys.argv
 
-    #  Top of stack contains FLAGS
+    if is_verbose:
+        print("\nOn return:")
+        print("IRET")
+
+    # Top of stack contains FLAGS
     saved_flags = cpu.memory.read(current_sp)
     current_sp = (current_sp + 1) & 0xFFFF
     cpu.write_register(int(Register.FLAGS), saved_flags)
+    if is_verbose:
+        print("Restore FLAGS")
 
-    #  Next down is the return IP
+    # Next item down is return execution address
     return_address = cpu.memory.read(current_sp)
     current_sp = (current_sp + 1) & 0xFFFF
     cpu.write_register(int(Register.IP), return_address)
+    if is_verbose:
+        print("Restore IP")
+        print("Resume Program")
 
     cpu.write_register(int(Register.SP), current_sp)
-
-    print(f"[DEBUG IRET]: Popping from Stack -> New SP: {current_sp:#06x}")
-    print(f"[DEBUG IRET]: Restored IP from Stack: {return_address:#06x}")
-    print(
-        f"[DEBUG IRET]: Actual CPU IP Register after write: {cpu.read_register(int(Register.IP)):#06x}")
 
 
 def execute_in(cpu: CPU, instruction: Instruction) -> None:
     port_operand = instruction.operands[0]
     port_id = IOPort(port_operand.value)
+    is_verbose = "verbose" in sys.argv or "--verbose" in sys.argv
 
     if port_id == IOPort.P0:
-        input_value = 0
+        input_value = cpu.io_ports[IOPort.P0]
         write_operand(cpu, instruction.operands[1], input_value)
 
-    elif port_id == IOPort.P2:
-        status_value = 0
-        write_operand(cpu, instruction.operands[1], status_value)
+        cpu.io_ports[IOPort.P2] &= ~1
 
+        if is_verbose:
+            print("\nInside the ISR:")
+            print(f"IN P0,R{instruction.operands[1].value}")
+            print(f"P0 -> R{instruction.operands[1].value}")
+            print("P2.INPUT_READY <- 0")
+
+    elif port_id == IOPort.P2:
+        status_value = cpu.io_ports[IOPort.P2]
+        write_operand(cpu, instruction.operands[1], status_value)
     else:
         raise ValueError(
-            f"Architectural Error: Port {port_id.name} is write-only or invalid for IN instructions.")
+            f"Architectural Error: Port {port_id.name} is write-only/invalid for IN.")
 
 
 def execute_out(cpu: CPU, instruction: Instruction) -> None:
@@ -323,4 +337,4 @@ def execute_out(cpu: CPU, instruction: Instruction) -> None:
         cpu.output_ports[IOPort.P1].append(char)
     else:
         raise ValueError(
-            f"Architectural Error: Port {port_id.name} is not an output port.")
+            f"Architectural Error: Port {port_id.name} is not configured as output.")

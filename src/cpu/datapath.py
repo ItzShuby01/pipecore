@@ -16,7 +16,7 @@ class CPU:
             Register.IP: 0x0040,  # program execution starts at 0x40
             Register.SP: 0xFFFF,  # stack grows downward
             Register.IR: 0,
-            Register.FLAGS: 0,
+            Register.FLAGS: 0x10,  # Bit 4  = FLAGS.I (Enabled by default)
         }
 
         self.running = True
@@ -25,6 +25,12 @@ class CPU:
             IOPort.P1: []
         }
 
+        self.io_ports: dict[IOPort, int] = {
+            IOPort.P0: 0,
+            IOPort.P2: 0
+        }
+
+        self.trap_request = False
         self.interrupt_asserted: int | None = None
 
     def fetch(self) -> int:
