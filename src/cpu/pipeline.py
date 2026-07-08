@@ -5,7 +5,7 @@ from typing import Any, TypedDict, TextIO
 from src.cpu.datapath import CPU
 from src.isa.decoder import decode
 from src.cpu.control_unit import execute
-from src.common.enums import Register, Opcode, AddressingMode
+from src.common.enums import Register, Opcode, AddressingMode, IOPort
 
 
 class PipelineStage(TypedDict, total=False):
@@ -122,7 +122,7 @@ class Pipeline:
         if self.ex_stage is not None:
             return self.ex_stage["pc"]
         if self.id_stage is not None:
-            return self.id_stage["pc"]
+            return self.ex_stage["pc"] if self.ex_stage else self.id_stage["pc"]
         if self.if_stage is not None:
             return self.if_stage["pc"]
         return self.cpu.read_register(int(Register.IP))
@@ -266,37 +266,36 @@ class Pipeline:
         opcode_name = getattr(ins.opcode, 'name', str(ins.opcode)).upper()
 
         if ins.opcode == Opcode.IRET:
+            ip_after = self.cpu.read_register(int(Register.IP))
             return (
+                "EX\n"
+                "--\n"
+                f"Instruction : {opcode_name}\n\n"
                 "FLAGS restored\n"
                 "IP restored\n"
-                "FLAGS.I : 0 -> 1"
+                "FLAGS.I : 0 -> 1\n\n"
+                f"Returning to 0x{ip_after:04X}"
             )
 
         lines = [
             "EX",
             "--",
-            "",
             f"Instruction : {opcode_name}",
-            ""
         ]
 
         if ins.opcode == Opcode.IN:
             dst_short = self._get_operand_short_name(
                 ins.operands[1]) if len(ins.operands) > 1 else "R1"
-            reg_idx = ins.operands[1].value if len(
-                ins.operands) > 1 else int(Register.R1)
-            reg_val = self.cpu.read_register(reg_idx)
-            char_repr = f" ('{chr(reg_val)}')" if 32 <= reg_val <= 126 else ""
+            port_val = self.cpu.io_ports.get(IOPort.P0, 0)
+            char_repr = f" ('{chr(port_val)}')" if 32 <= port_val <= 126 else ""
 
-            lines = [
-                "EX",
-                "--",
+            lines.extend([
+                "Port        : P0",
+                f"Dest        : {dst_short}",
                 "",
-                "Execute",
-                "-------",
                 f"{dst_short} <- P0{char_repr}",
                 "P2.INPUT_READY <- 0"
-            ]
+            ])
 
         elif ins.opcode == Opcode.OUT:
             src_short = self._get_operand_short_name(
@@ -310,40 +309,31 @@ class Pipeline:
             if 32 <= reg_val <= 126:
                 self._out_buffer += chr(reg_val)
 
-            lines = [
-                "EX",
-                "--",
+            lines.extend([
+                "Port        : P1",
+                f"Source      : {src_short}",
                 "",
-                "Execute",
-                "-------",
                 f"P1 <- {src_short}{char_repr}",
                 "",
                 "Output Buffer",
                 "-------------",
                 f"{self._out_buffer if self._out_buffer else val_raw}"
-            ]
+            ])
 
         elif ins.opcode == Opcode.MOV:
-            lines.extend(["Datapath", "--------"])
             if len(ins.operands) >= 2:
                 src_op = ins.operands[0]
                 dst_op = ins.operands[1]
                 val = self._resolve_operand_value(src_op)
                 dst_short = self._get_operand_short_name(dst_op)
                 lines.extend([
+                    "",
                     f"Source      : {self._get_operand_mode_name(src_op)}",
-                    f"Destination : {self._get_operand_short_name(dst_op)}",
-                    "",
-                    "Memory",
-                    "------",
-                    "None",
-                    "",
-                    "Writeback",
-                    "---------",
+                    f"Destination : {dst_short}",
                     f"{dst_short} <- {val}"
                 ])
             else:
-                lines.append("Transfer Actions Completed")
+                lines.extend(["", "Transfer Actions Completed"])
 
         elif ins.opcode == Opcode.LOAD:
             if len(ins.operands) >= 2:
@@ -356,9 +346,10 @@ class Pipeline:
                 val = self._resolve_operand_value(src_op)
                 dst_short = self._get_operand_short_name(dst_op)
                 lines.extend([
-                    "Datapath", "--------", f"Address = 0x{addr:04X}", "",
-                    "Memory", "------", f"MEM[0x{addr:04X}] -> {val}", "",
-                    "Writeback", "---------", f"{dst_short} <- {val}"
+                    "",
+                    f"Address : 0x{addr:04X}",
+                    f"MEM[0x{addr:04X}] -> {val}",
+                    f"{dst_short} <- {val}"
                 ])
 
         elif ins.opcode == Opcode.STORE:
@@ -371,13 +362,13 @@ class Pipeline:
                     dst_op)
                 src_short = self._get_operand_short_name(src_op)
                 lines.extend([
-                    "Datapath", "--------", f"Address = 0x{addr:04X}", "",
-                    "Memory", "------", f"MEM[0x{addr:04X}] <- {src_short}", "",
-                    "Writeback", "---------", "None"
+                    "",
+                    f"Address : 0x{addr:04X}",
+                    f"MEM[0x{addr:04X}] <- {src_short}"
                 ])
 
         elif ins.opcode in (Opcode.ADD, Opcode.SUB, Opcode.MUL, Opcode.DIV, Opcode.MOD, Opcode.CMP, Opcode.INC, Opcode.DEC):
-            lines.extend(["ALU", "---"])
+            lines.extend([""])
             if len(ins.operands) >= 2:
                 src_op = ins.operands[0]
                 dst_op = ins.operands[1]
@@ -400,8 +391,7 @@ class Pipeline:
 
                 lines.append(f"{val_a} {op_char} {val_b} = {res}")
                 if ins.opcode != Opcode.CMP:
-                    lines.extend(["", "Writeback", "---------",
-                                 f"{dst_short} <- {res}"])
+                    lines.append(f"{dst_short} <- {res}")
             elif len(ins.operands) == 1:
                 op = ins.operands[0]
                 val = self._resolve_operand_value(op)
@@ -409,11 +399,10 @@ class Pipeline:
                 res = val + 1 if ins.opcode == Opcode.INC else val - 1
                 op_char = "+ 1" if ins.opcode == Opcode.INC else "- 1"
                 lines.append(f"{val} {op_char} = {res}")
-                lines.extend(
-                    ["", "Writeback", "---------", f"{op_short} <- {res}"])
+                lines.append(f"{op_short} <- {res}")
 
         elif ins.opcode in (Opcode.JMP, Opcode.JZ, Opcode.JNZ, Opcode.JLT, Opcode.JGT, Opcode.CALL, Opcode.RET):
-            lines.extend(["Branch", "------"])
+            lines.extend([""])
             flags = self.cpu.read_register(int(Register.FLAGS))
             z_flag = flags & 1
 
@@ -429,14 +418,12 @@ class Pipeline:
                 else:
                     lines.append("PC <- Next Sequential PC")
                 if taken:
-                    lines.extend(
-                        ["", "Pipeline", "--------", "Flush IF", "Flush ID"])
+                    lines.extend(["Flush IF", "Flush ID"])
 
             elif ins.opcode == Opcode.CALL:
                 if len(ins.operands) > 0:
                     lines.append(f"PC <- 0x{ins.operands[0].value:04X}")
-                lines.extend(
-                    ["", "Pipeline", "--------", "Flush IF", "Flush ID"])
+                lines.extend(["Flush IF", "Flush ID"])
             elif ins.opcode == Opcode.RET:
                 sp = self.cpu.read_register(int(Register.SP))
                 try:
@@ -444,11 +431,10 @@ class Pipeline:
                     lines.append(f"PC <- 0x{ret_addr:04X}")
                 except Exception:
                     lines.append("PC <- Stack Return Address")
-                lines.extend(
-                    ["", "Pipeline", "--------", "Flush IF", "Flush ID"])
+                lines.extend(["Flush IF", "Flush ID"])
 
         elif ins.opcode in (Opcode.PUSH, Opcode.POP):
-            lines.extend(["Stack Operation", "---------------"])
+            lines.extend([""])
             if len(ins.operands) > 0:
                 op = ins.operands[0]
                 val = self._resolve_operand_value(op)
@@ -462,7 +448,7 @@ class Pipeline:
                         [f"{op_short} <- MEM[0x{sp:04X}]", f"SP <- 0x{(sp + 1) & 0xFFFF:04X}"])
 
         elif ins.opcode in (Opcode.HALT, Opcode.NOP):
-            lines.extend(["System Control", "--------------"])
+            lines.extend([""])
             if ins.opcode == Opcode.HALT:
                 lines.extend(["HALT asserted", "Pipeline draining"])
             else:
@@ -486,9 +472,6 @@ class Pipeline:
 
             if "HALT" in opcode_name:
                 self.cpu.running = False
-                if self.mode == "verbose":
-                    ex_verbose = self._generate_dynamic_ex_details(
-                        ins, current_ex["pc"])
             else:
                 ip_before = self.cpu.read_register(int(Register.IP))
 
@@ -496,12 +479,6 @@ class Pipeline:
                     execute(self.cpu, ins)
 
                 ip_after = self.cpu.read_register(int(Register.IP))
-
-                if self.mode == "verbose":
-                    ex_verbose = self._generate_dynamic_ex_details(
-                        ins, current_ex["pc"])
-                    if ins.opcode == Opcode.IRET:
-                        ex_verbose += f"\n\nReturning to 0x{ip_after:04X}"
 
                 if ip_before != ip_after or ins.opcode == Opcode.IRET:
                     self.flush()
@@ -517,10 +494,8 @@ class Pipeline:
                 with ContextSilencer():
                     decoded_ins = decode(current_if["word"], self.cpu)
 
-                self.id_stage = {"pc": current_if["pc"], "ins": decoded_ins}
-                if self.mode == "verbose":
-                    id_verbose = self._generate_dynamic_id_details(
-                        decoded_ins, current_if["word"])
+                self.id_stage = {
+                    "pc": current_if["pc"], "ins": decoded_ins, "word": current_if["word"]}
             else:
                 self.id_stage = None
 
@@ -531,16 +506,6 @@ class Pipeline:
                     word = self.cpu.fetch()
 
                 self.if_stage = {"pc": current_pc, "word": word}
-
-                if self.mode == "verbose":
-                    op_name = self._peek_opcode_name(word)
-                    if_verbose = (
-                        "IF\n"
-                        "--\n\n"
-                        f"PC      : 0x{current_pc:04X}\n"
-                        f"Opcode  : {op_name}\n"
-                        f"Word    : 0x{word:08X}"
-                    )
             except Exception:
                 self.if_stage = None
         else:
@@ -552,6 +517,31 @@ class Pipeline:
                 self.cpu.running = False
         else:
             self.empty_streak = 0
+
+        if self.mode == "verbose":
+            if self.if_stage is not None:
+                op_name = self._peek_opcode_name(self.if_stage["word"])
+                if_verbose = (
+                    "IF\n"
+                    "--\n\n"
+                    f"PC      : 0x{self.if_stage['pc']:04X}\n"
+                    f"Opcode  : {op_name}\n"
+                    f"Word    : 0x{self.if_stage['word']:08X}"
+                )
+            else:
+                if_verbose = "IF\n--\nNo instruction"
+
+            if self.id_stage is not None:
+                id_verbose = self._generate_dynamic_id_details(
+                    self.id_stage["ins"], self.id_stage["word"])
+            else:
+                id_verbose = "ID\n--\nNo instruction"
+
+            if self.ex_stage is not None:
+                ex_verbose = self._generate_dynamic_ex_details(
+                    self.ex_stage["ins"], self.ex_stage["pc"])
+            else:
+                ex_verbose = "EX\n--\nNo instruction"
 
         self._log_pipeline_state(if_verbose, id_verbose, ex_verbose)
 
@@ -590,7 +580,7 @@ class Pipeline:
 
         if self.mode == "verbose":
             print("\nPipeline Registers")
-            print("---------")
+            print("------------------")
             print(f"IF : {format_short_stage(self.if_stage)}")
             print(f"ID : {format_short_stage(self.id_stage)}")
             print(f"EX : {format_short_stage(self.ex_stage)}")

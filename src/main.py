@@ -18,7 +18,8 @@ def main() -> None:
 
     schedule = [
         (5, 'H'),
-        (10, 'i')
+        (6, 'i'),
+        (7, 'm')
     ]
 
     simulator = Simulator()
