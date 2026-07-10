@@ -17,12 +17,12 @@ class InterruptController:
         ip = return_pc if return_pc is not None else cpu.read_register(
             int(Register.IP))
         sp = cpu.read_register(int(Register.SP))
-        sp = (sp - 1) & 0xFFFF
+        sp = (sp - 4) & 0xFFFF
         cpu.memory.write(sp, ip)
-        sp = (sp - 1) & 0xFFFF
+        sp = (sp - 4) & 0xFFFF
         cpu.memory.write(sp, flags)
         cpu.write_register(int(Register.SP), sp)
-        target_isr_address = cpu.memory.read(intr_num)
+        target_isr_address = cpu.memory.read(intr_num * 4)
         cpu.write_register(int(Register.IP), target_isr_address)
 
     @staticmethod
@@ -44,14 +44,14 @@ class InterruptController:
             print("SP <- SP-1")
             print("MEM[SP] <- IP")
 
-        sp = (sp - 1) & 0xFFFF
+        sp = (sp - 4) & 0xFFFF
         cpu.memory.write(sp, ip)
 
         if is_verbose:
             print("SP <- SP-1")
             print("MEM[SP] <- FLAGS")
 
-        sp = (sp - 1) & 0xFFFF
+        sp = (sp - 4) & 0xFFFF
         cpu.memory.write(sp, flags)
 
         cpu.write_register(int(Register.SP), sp)

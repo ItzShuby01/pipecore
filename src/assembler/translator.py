@@ -25,7 +25,7 @@ class Translator:
                 p_inst = Parser.parse_line(
                     token.instruction_text, token.line_number)
                 instructions_to_encode.append(p_inst)
-                current_address += 1 + len(p_inst.operands)
+                current_address += 4 * (1 + len(p_inst.operands))
 
         # Binary Object Emission
         binary_output: list[int] = []

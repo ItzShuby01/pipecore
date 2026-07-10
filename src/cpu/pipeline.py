@@ -12,6 +12,8 @@ class PipelineStage(TypedDict, total=False):
     pc: int
     word: int
     ins: Any
+    words: list[int]
+    size: int
 
 
 class SimulationOutputFilter:
@@ -113,6 +115,40 @@ class Pipeline:
             self.mode = "pipeline"
 
         sys.stdout = SimulationOutputFilter(sys.stdout, self.mode, self)
+
+        if self.cpu.running:
+            current_pc = self.cpu.read_register(int(Register.IP))
+            try:
+                with ContextSilencer():
+                    word = self.cpu.fetch()
+
+                size = 1
+                words = [word]
+                try:
+                    with ContextSilencer():
+                        saved_ip = self.cpu.read_register(int(Register.IP))
+                        temp_ins = decode(word, self.cpu)
+                        self.cpu.write_register(int(Register.IP), saved_ip)
+
+                    if temp_ins is not None:
+                        opcode_name = getattr(
+                            temp_ins.opcode, 'name', str(temp_ins.opcode)).upper()
+                        if any(getattr(op.mode, 'name', '') in ("IMMEDIATE", "DIRECT_MEMORY", "INDEXED") or getattr(op.mode, 'value', -1) in (0, 2, 4) for op in temp_ins.operands):
+                            size = 3 if opcode_name in ("MOV", "CALL") else 2
+
+                        for i in range(1, size):
+                            try:
+                                words.append(
+                                    int(self.cpu.memory.read(current_pc + i * 4)))
+                            except Exception:
+                                words.append(0)
+                except Exception:
+                    pass
+
+                self.if_stage = {"pc": current_pc,
+                                 "word": word, "words": words, "size": size}
+            except Exception:
+                self.if_stage = None
 
     def flush(self) -> None:
         self.if_stage = None
@@ -266,7 +302,11 @@ class Pipeline:
         opcode_name = getattr(ins.opcode, 'name', str(ins.opcode)).upper()
 
         if ins.opcode == Opcode.IRET:
-            ip_after = self.cpu.read_register(int(Register.IP))
+            try:
+                sp = self.cpu.read_register(int(Register.SP))
+                ip_after = self.cpu.memory.read((sp - 4) & 0xFFFF)
+            except Exception:
+                ip_after = 0
             return (
                 "EX\n"
                 "--\n"
@@ -505,7 +545,31 @@ class Pipeline:
                 with ContextSilencer():
                     word = self.cpu.fetch()
 
-                self.if_stage = {"pc": current_pc, "word": word}
+                size = 1
+                words = [word]
+                try:
+                    with ContextSilencer():
+                        saved_ip = self.cpu.read_register(int(Register.IP))
+                        temp_ins = decode(word, self.cpu)
+                        self.cpu.write_register(int(Register.IP), saved_ip)
+
+                    if temp_ins is not None:
+                        opcode_name = getattr(
+                            temp_ins.opcode, 'name', str(temp_ins.opcode)).upper()
+                        if any(getattr(op.mode, 'name', '') in ("IMMEDIATE", "DIRECT_MEMORY", "INDEXED") or getattr(op.mode, 'value', -1) in (0, 2, 4) for op in temp_ins.operands):
+                            size = 3 if opcode_name in ("MOV", "CALL") else 2
+
+                        for i in range(1, size):
+                            try:
+                                words.append(
+                                    int(self.cpu.memory.read(current_pc + i * 4)))
+                            except Exception:
+                                words.append(0)
+                except Exception:
+                    pass
+
+                self.if_stage = {"pc": current_pc,
+                                 "word": word, "words": words, "size": size}
             except Exception:
                 self.if_stage = None
         else:
@@ -519,31 +583,37 @@ class Pipeline:
             self.empty_streak = 0
 
         if self.mode == "verbose":
-            if self.if_stage is not None:
-                op_name = self._peek_opcode_name(self.if_stage["word"])
-                if_verbose = (
-                    "IF\n"
-                    "--\n\n"
-                    f"PC      : 0x{self.if_stage['pc']:04X}\n"
-                    f"Opcode  : {op_name}\n"
-                    f"Word    : 0x{self.if_stage['word']:08X}"
-                )
+            if current_if is not None:
+                op_name = self._peek_opcode_name(current_if["word"])
+                size = current_if.get("size", 1)
+                words = current_if.get("words", [current_if["word"]])
+                lines = [
+                    "IF",
+                    "--",
+                    f"PC       : 0x{current_if['pc']:04X}",
+                    f"Opcode   : {op_name}",
+                    f"Length   : {size} {'words' if size > 1 else 'word'}",
+                ]
+                for i, w in enumerate(words):
+                    lines.append(f"Word[{i}]  : 0x{w:08X}")
+                if_verbose = "\n".join(lines)
             else:
                 if_verbose = "IF\n--\nNo instruction"
 
-            if self.id_stage is not None:
+            if current_id is not None:
                 id_verbose = self._generate_dynamic_id_details(
-                    self.id_stage["ins"], self.id_stage["word"])
+                    current_id["ins"], current_id["word"])
             else:
                 id_verbose = "ID\n--\nNo instruction"
 
-            if self.ex_stage is not None:
+            if current_ex is not None:
                 ex_verbose = self._generate_dynamic_ex_details(
-                    self.ex_stage["ins"], self.ex_stage["pc"])
+                    current_ex["ins"], current_ex["pc"])
             else:
                 ex_verbose = "EX\n--\nNo instruction"
 
-        self._log_pipeline_state(if_verbose, id_verbose, ex_verbose)
+        self._log_pipeline_state(
+            if_verbose, id_verbose, ex_verbose, current_if, current_id, current_ex)
 
         if not self.cpu.running and not getattr(self, '_final_reported', False):
             self._final_reported = True
@@ -554,7 +624,8 @@ class Pipeline:
             print(f"P1 : {p1_val}")
             print("P2 : INPUT_READY=0\n")
 
-    def _log_pipeline_state(self, if_v: str | None = None, id_v: str | None = None, ex_v: str | None = None) -> None:
+    def _log_pipeline_state(self, if_v: str | None = None, id_v: str | None = None, ex_v: str | None = None,
+                            snap_if: PipelineStage | None = None, snap_id: PipelineStage | None = None, snap_ex: PipelineStage | None = None) -> None:
         def format_stage(stage: PipelineStage | None, is_raw: bool = False) -> str:
             if stage is None:
                 return "EMPTY"
@@ -581,9 +652,9 @@ class Pipeline:
         if self.mode == "verbose":
             print("\nPipeline Registers")
             print("------------------")
-            print(f"IF : {format_short_stage(self.if_stage)}")
-            print(f"ID : {format_short_stage(self.id_stage)}")
-            print(f"EX : {format_short_stage(self.ex_stage)}")
+            print(f"IF : {format_short_stage(snap_if)}")
+            print(f"ID : {format_short_stage(snap_id)}")
+            print(f"EX : {format_short_stage(snap_ex)}")
             print()
             if if_v:
                 print(if_v + "\n")
@@ -595,9 +666,9 @@ class Pipeline:
         else:
             print(
                 f"[Pipeline Trace] "
-                f"IF: {format_stage(self.if_stage, is_raw=True):<25} | "
-                f"ID: {format_stage(self.id_stage):<15} | "
-                f"EX: {format_stage(self.ex_stage):<15}"
+                f"IF: {format_stage(snap_if, is_raw=True):<25} | "
+                f"ID: {format_stage(snap_id):<15} | "
+                f"EX: {format_stage(snap_ex):<15}"
             )
 
     def is_empty(self) -> bool:

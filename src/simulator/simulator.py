@@ -109,6 +109,7 @@ class Simulator:
                 self.pipeline.flush()
                 InterruptController.process_trap(
                     self.cpu, return_pc=return_address)
+                self.cpu.trap_request = False
 
             self.pipeline.tick()
             self.cycle_count += 1
@@ -121,7 +122,10 @@ class Simulator:
         print("Registers Final State:")
         from src.common.enums import Register
         for reg in Register:
-            val = self.cpu.registers[reg]
+            try:
+                val = self.cpu.read_register(int(reg))
+            except Exception:
+                val = self.cpu.registers[reg]
             print(f"  {reg.name:<5}: {val:<10} (0x{val:08X})")
 
         accumulated_output = "".join(self.cpu.output_ports[IOPort.P1])

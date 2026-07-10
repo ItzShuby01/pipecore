@@ -7,4 +7,4 @@ class Loader:
     def load(cpu: CPU, binary: list[int], start_address: int) -> None:
         """Injects compiled binary streams into the system memory map."""
         for offset, word in enumerate(binary):
-            cpu.memory.write(start_address + offset, word)
+            cpu.memory.write(start_address + offset * 4, word)

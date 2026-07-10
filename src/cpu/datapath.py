@@ -36,7 +36,7 @@ class CPU:
     def fetch(self) -> int:
         instruction = self.memory.read(self.registers[Register.IP])
         self.registers[Register.IR] = instruction
-        self.registers[Register.IP] += 1
+        self.registers[Register.IP] += 4
         return instruction
 
     def read_register(self, reg_id: int) -> int:

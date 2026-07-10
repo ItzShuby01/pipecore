@@ -56,8 +56,10 @@ def write_operand(cpu: CPU, operand: Operand, value: int) -> None:
 
 
 def update_flags(cpu: CPU, result: int, overflow: bool = False) -> None:
-    """Helper to update Z, N, and O flags"""
-    flags = 0
+    """Helper to update Z, N, and O flags safely"""
+    current_flags = cpu.read_register(int(Register.FLAGS))
+    flags = current_flags & ~((1 << 0) | (1 << 1) | (1 << 3))
+
     if (result & 0xFFFFFFFF) == 0:
         flags |= (1 << 0)
     if result & 0x80000000:
@@ -141,7 +143,7 @@ def execute_store(cpu: CPU, instruction: Instruction) -> None:
 def execute_push(cpu: CPU, instruction: Instruction) -> None:
     value = read_operand(cpu, instruction.operands[0])
     current_sp = cpu.read_register(int(Register.SP))
-    new_sp = (current_sp - 1) & 0xFFFF
+    new_sp = (current_sp - 4) & 0xFFFF
     cpu.write_register(int(Register.SP), new_sp)
     cpu.memory.write(new_sp, value)
 
@@ -152,7 +154,7 @@ def execute_pop(cpu: CPU, instruction: Instruction) -> None:
         raise IndexError("Stack Underflow Error!")
     value = cpu.memory.read(current_sp)
     write_operand(cpu, instruction.operands[0], value)
-    cpu.write_register(int(Register.SP), (current_sp + 1) & 0xFFFF)
+    cpu.write_register(int(Register.SP), (current_sp + 4) & 0xFFFF)
 
 
 def execute_add(cpu: CPU, instruction: Instruction) -> None:
@@ -258,7 +260,7 @@ def execute_call(cpu: CPU, instruction: Instruction) -> None:
     target_address = read_operand(cpu, instruction.operands[0])
     return_address = cpu.read_register(int(Register.IP))
     current_sp = cpu.read_register(int(Register.SP))
-    new_sp = (current_sp - 1) & 0xFFFF
+    new_sp = (current_sp - 4) & 0xFFFF
     cpu.write_register(int(Register.SP), new_sp)
     cpu.memory.write(new_sp, return_address)
     cpu.write_register(int(Register.IP), target_address)
@@ -269,7 +271,7 @@ def execute_ret(cpu: CPU, instruction: Instruction) -> None:
     if current_sp == 0xFFFF:
         raise IndexError("Stack Underflow Error: RET called on empty stack!")
     return_address = cpu.memory.read(current_sp)
-    cpu.write_register(int(Register.SP), (current_sp + 1) & 0xFFFF)
+    cpu.write_register(int(Register.SP), (current_sp + 1 * 4) & 0xFFFF)
     cpu.write_register(int(Register.IP), return_address)
 
 
@@ -284,14 +286,14 @@ def execute_iret(cpu: CPU, instruction: Instruction) -> None:
 
     # Top of stack contains FLAGS
     saved_flags = cpu.memory.read(current_sp)
-    current_sp = (current_sp + 1) & 0xFFFF
+    current_sp = (current_sp + 4) & 0xFFFF
     cpu.write_register(int(Register.FLAGS), saved_flags)
     if is_verbose:
         print("Restore FLAGS")
 
     # Next item down is return execution address
     return_address = cpu.memory.read(current_sp)
-    current_sp = (current_sp + 1) & 0xFFFF
+    current_sp = (current_sp + 4) & 0xFFFF
     cpu.write_register(int(Register.IP), return_address)
     if is_verbose:
         print("Restore IP")
