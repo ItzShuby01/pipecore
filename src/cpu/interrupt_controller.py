@@ -31,7 +31,7 @@ class InterruptController:
         if not cpu.running or not cpu.trap_request:
             return
 
-        is_verbose = "verbose" in sys.argv or "--verbose" in sys.argv
+        is_verbose = "verbose" in sys.argv or "v" in sys.argv
 
         flags = cpu.read_register(int(Register.FLAGS))
         ip = return_pc if return_pc is not None else cpu.read_register(

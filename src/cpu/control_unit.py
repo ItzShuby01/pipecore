@@ -278,7 +278,7 @@ def execute_ret(cpu: CPU, instruction: Instruction) -> None:
 def execute_iret(cpu: CPU, instruction: Instruction) -> None:
     """Pops state in strict inverse order of trap generation."""
     current_sp = cpu.read_register(int(Register.SP))
-    is_verbose = "verbose" in sys.argv or "--verbose" in sys.argv
+    is_verbose = "verbose" in sys.argv or "v" in sys.argv
 
     if is_verbose:
         print("\nOn return:")
@@ -305,7 +305,7 @@ def execute_iret(cpu: CPU, instruction: Instruction) -> None:
 def execute_in(cpu: CPU, instruction: Instruction) -> None:
     port_operand = instruction.operands[0]
     port_id = IOPort(port_operand.value)
-    is_verbose = "verbose" in sys.argv or "--verbose" in sys.argv
+    is_verbose = "verbose" in sys.argv or "v" in sys.argv
 
     if port_id == IOPort.P0:
         input_value = cpu.io_ports[IOPort.P0]

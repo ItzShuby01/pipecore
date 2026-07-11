@@ -107,9 +107,9 @@ class Pipeline:
         self._out_buffer = ""
         self._final_reported = False
 
-        if "silent" in sys.argv or "--silent" in sys.argv:
+        if "silent" in sys.argv or "s" in sys.argv:
             self.mode = "silent"
-        elif "verbose" in sys.argv or "--verbose" in sys.argv or getattr(cpu, "verbose", False):
+        elif "verbose" in sys.argv or "v" in sys.argv or getattr(cpu, "verbose", False):
             self.mode = "verbose"
         else:
             self.mode = "pipeline"

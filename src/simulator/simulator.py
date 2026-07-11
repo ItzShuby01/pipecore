@@ -20,21 +20,25 @@ class Simulator:
         self.current_resumed_id: int | None = None
         self.current_resumed_token: str | None = None
 
-    def initialize_environment(self, main_source: str, isr_source: str, input_schedule: list[tuple[int, str]] | None = None) -> None:
+    def initialize_environment(self, main_source: str, isr_source: str, input_schedule: list[tuple[int, str]] | None = None,
+                               main_bin: str | None = None, main_lst: str | None = None,
+                               isr_bin: str | None = None, isr_lst: str | None = None) -> None:
         self.cpu.memory.write(0x0000, 0x0050)
 
-        main_bin = self.translator.assemble(main_source, start_address=0x0040)
-        Loader.load(self.cpu, main_bin, start_address=0x0040)
+        main_bin_data = self.translator.assemble(
+            main_source, start_address=0x0040, bin_path=main_bin, lst_path=main_lst)
+        Loader.load(self.cpu, main_bin_data, start_address=0x0040)
 
-        isr_bin = self.translator.assemble(isr_source, start_address=0x0050)
-        Loader.load(self.cpu, isr_bin, start_address=0x0050)
+        isr_bin_data = self.translator.assemble(
+            isr_source, start_address=0x0050, bin_path=isr_bin, lst_path=isr_lst)
+        Loader.load(self.cpu, isr_bin_data, start_address=0x0050)
 
         if input_schedule is not None:
             self.input_schedule = input_schedule
 
     def run(self) -> None:
-        is_silent = "silent" in sys.argv or "--silent" in sys.argv
-        is_verbose = "verbose" in sys.argv or "--verbose" in sys.argv
+        is_silent = "silent" in sys.argv or "s" in sys.argv
+        is_verbose = "verbose" in sys.argv or "v" in sys.argv
 
         if not is_silent:
             print("\n--- PipeCore Pipeline Simulation ---")
