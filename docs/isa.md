@@ -511,15 +511,15 @@ HALT
 Opcode, register codes, and operand encodings are specified in [encoding.md](./encoding.md).
 
 ```text
-0000: 10201000    ; MOV header
-0001: 00000041    ; immediate value 65 ('A')
-0002: 00000001    ; destination R1
+0040: 10201000    ; MOV header
+0044: 00000041    ; immediate value 65 ('A')
+0048: 00000001    ; destination R1
 
-0003: 51211000    ; OUT header
-0004: 00000001    ; output port P1
-0005: 00000001    ; source R1
+004C: 51211000    ; OUT header
+0050: 00000001    ; output port P1
+0054: 00000001    ; source R1
 
-0006: 01000000    ; HALT
+0058: 01000000    ; HALT
 ```
 
 ### Expected Output
