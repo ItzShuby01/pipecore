@@ -1,16 +1,14 @@
 from __future__ import annotations
 
-from src.common.enums import Opcode, AddressingMode
+from src.common.enums import Opcode, AddressingMode, Register
 from src.isa.instruction import Instruction, Operand
 from typing import TYPE_CHECKING
-
-# bits 31–24 = opcode -> shift right by 24 isolates opcode
 
 if TYPE_CHECKING:
     from src.cpu.datapath import CPU
 
 
-def decode(word: int, cpu: CPU) -> Instruction:
+def decode(word: int, cpu: CPU, base_pc: int | None = None) -> Instruction:
     opcode = Opcode((word >> 24) & 0xFF)
     operand_count = (word >> 20) & 0xF
 
@@ -22,10 +20,13 @@ def decode(word: int, cpu: CPU) -> Instruction:
 
     flags = word & 0xFF
 
-    # Pull trailing words based on operand_count
+    if base_pc is None:
+        base_pc = cpu.read_register(int(Register.IP)) - 4
+
     operands: list[Operand] = []
     for i in range(operand_count):
-        operand_word = cpu.fetch()
+        target_addr = base_pc + 4 + (i * 4)
+        operand_word = cpu.memory.read(target_addr)
         operands.append(Operand(mode=modes[i], value=operand_word))
 
     return Instruction(

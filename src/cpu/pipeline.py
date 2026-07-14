@@ -53,7 +53,7 @@ class SimulationOutputFilter:
                 self._v_sp = 0xFFFF
 
         if "SP <- SP-1" in text:
-            v_next = (self._v_sp - 1) & 0xFFFF
+            v_next = (self._v_sp - 4) & 0xFFFF
             text = text.replace(
                 "SP <- SP-1", f"SP : {self._v_sp:04X} -> {v_next:04X}")
             self._v_sp = v_next
@@ -131,10 +131,7 @@ class Pipeline:
                         self.cpu.write_register(int(Register.IP), saved_ip)
 
                     if temp_ins is not None:
-                        opcode_name = getattr(
-                            temp_ins.opcode, 'name', str(temp_ins.opcode)).upper()
-                        if any(getattr(op.mode, 'name', '') in ("IMMEDIATE", "DIRECT_MEMORY", "INDEXED") or getattr(op.mode, 'value', -1) in (0, 2, 4) for op in temp_ins.operands):
-                            size = 3 if opcode_name in ("MOV", "CALL") else 2
+                        size = 1 + getattr(temp_ins, 'operand_count', 0)
 
                         for i in range(1, size):
                             try:
@@ -147,6 +144,8 @@ class Pipeline:
 
                 self.if_stage = {"pc": current_pc,
                                  "word": word, "words": words, "size": size}
+                self.cpu.write_register(
+                    int(Register.IP), current_pc + 4 * size)
             except Exception:
                 self.if_stage = None
 
@@ -251,10 +250,7 @@ class Pipeline:
 
     def _generate_dynamic_id_details(self, ins: Any, word: int) -> str:
         opcode_name = getattr(ins.opcode, 'name', str(ins.opcode)).upper()
-
-        size = 1
-        if any(getattr(op.mode, 'name', '') in ("IMMEDIATE", "DIRECT_MEMORY", "INDEXED") or getattr(op.mode, 'value', -1) in (0, 2, 4) for op in ins.operands):
-            size = 3 if opcode_name in ("MOV", "CALL") else 2
+        size = 1 + getattr(ins, 'operand_count', 0)
 
         lines = [
             "ID",
@@ -287,7 +283,14 @@ class Pipeline:
             if not ins.operands:
                 lines.append("None")
             else:
-                if len(ins.operands) == 1:
+                if len(ins.operands) == 3 and ins.opcode in (Opcode.ADD, Opcode.SUB, Opcode.MUL, Opcode.DIV, Opcode.MOD):
+                    lines.append(
+                        f"SRC1 : {self._get_operand_str(ins.operands[0])}")
+                    lines.append(
+                        f"SRC2 : {self._get_operand_str(ins.operands[1])}")
+                    lines.append(
+                        f"DST  : {self._get_operand_str(ins.operands[2])}")
+                elif len(ins.operands) == 1:
                     lines.append(
                         f"SRC : {self._get_operand_str(ins.operands[0])}")
                 elif len(ins.operands) >= 2:
@@ -409,7 +412,31 @@ class Pipeline:
 
         elif ins.opcode in (Opcode.ADD, Opcode.SUB, Opcode.MUL, Opcode.DIV, Opcode.MOD, Opcode.CMP, Opcode.INC, Opcode.DEC):
             lines.extend([""])
-            if len(ins.operands) >= 2:
+            if len(ins.operands) == 3 and ins.opcode in (Opcode.ADD, Opcode.SUB, Opcode.MUL, Opcode.DIV, Opcode.MOD):
+                src1_op = ins.operands[0]
+                src2_op = ins.operands[1]
+                dst_op = ins.operands[2]
+
+                val_1 = self._resolve_operand_value(src1_op)
+                val_2 = self._resolve_operand_value(src2_op)
+                dst_short = self._get_operand_short_name(dst_op)
+
+                res = val_1
+                op_char = "?"
+                if ins.opcode == Opcode.ADD:
+                    res, op_char = val_1 + val_2, "+"
+                elif ins.opcode == Opcode.SUB:
+                    res, op_char = val_1 - val_2, "-"
+                elif ins.opcode == Opcode.MUL:
+                    res, op_char = val_1 * val_2, "*"
+                elif ins.opcode == Opcode.DIV:
+                    res, op_char = (val_1 // val_2 if val_2 != 0 else 0), "/"
+                elif ins.opcode == Opcode.MOD:
+                    res, op_char = (val_1 % val_2 if val_2 != 0 else 0), "%"
+
+                lines.append(f"{val_1} {op_char} {val_2} = {res}")
+                lines.append(f"{dst_short} <- {res}")
+            elif len(ins.operands) >= 2:
                 src_op = ins.operands[0]
                 dst_op = ins.operands[1]
                 val_a = self._resolve_operand_value(dst_op)
@@ -417,18 +444,7 @@ class Pipeline:
                 dst_short = self._get_operand_short_name(dst_op)
 
                 res = val_a
-                op_char = "?"
-                if ins.opcode == Opcode.ADD:
-                    res, op_char = val_a + val_b, "+"
-                elif ins.opcode in (Opcode.SUB, Opcode.CMP):
-                    res, op_char = val_a - val_b, "-"
-                elif ins.opcode == Opcode.MUL:
-                    res, op_char = val_a * val_b, "*"
-                elif ins.opcode == Opcode.DIV:
-                    res, op_char = (val_a // val_b if val_b != 0 else 0), "/"
-                elif ins.opcode == Opcode.MOD:
-                    res, op_char = (val_a % val_b if val_b != 0 else 0), "%"
-
+                op_char = "-" if ins.opcode == Opcode.CMP else "?"
                 lines.append(f"{val_a} {op_char} {val_b} = {res}")
                 if ins.opcode != Opcode.CMP:
                     lines.append(f"{dst_short} <- {res}")
@@ -482,10 +498,10 @@ class Pipeline:
                 sp = self.cpu.read_register(int(Register.SP))
                 if ins.opcode == Opcode.PUSH:
                     lines.extend(
-                        [f"MEM[0x{(sp - 1) & 0xFFFF:04X}] <- {val}", f"SP <- 0x{(sp - 1) & 0xFFFF:04X}"])
+                        [f"MEM[0x{(sp - 4) & 0xFFFF:04X}] <- {val}", f"SP <- 0x{(sp - 4) & 0xFFFF:04X}"])
                 else:
                     lines.extend(
-                        [f"{op_short} <- MEM[0x{sp:04X}]", f"SP <- 0x{(sp + 1) & 0xFFFF:04X}"])
+                        [f"{op_short} <- MEM[0x{sp:04X}]", f"SP <- 0x{(sp + 4) & 0xFFFF:04X}"])
 
         elif ins.opcode in (Opcode.HALT, Opcode.NOP):
             lines.extend([""])
@@ -532,7 +548,15 @@ class Pipeline:
 
             if current_if is not None:
                 with ContextSilencer():
+                    saved_pipeline_ip = self.cpu.read_register(
+                        int(Register.IP))
+                    self.cpu.write_register(
+                        int(Register.IP), current_if["pc"] + 4)
+
                     decoded_ins = decode(current_if["word"], self.cpu)
+
+                    self.cpu.write_register(
+                        int(Register.IP), saved_pipeline_ip)
 
                 self.id_stage = {
                     "pc": current_if["pc"], "ins": decoded_ins, "word": current_if["word"]}
@@ -554,10 +578,7 @@ class Pipeline:
                         self.cpu.write_register(int(Register.IP), saved_ip)
 
                     if temp_ins is not None:
-                        opcode_name = getattr(
-                            temp_ins.opcode, 'name', str(temp_ins.opcode)).upper()
-                        if any(getattr(op.mode, 'name', '') in ("IMMEDIATE", "DIRECT_MEMORY", "INDEXED") or getattr(op.mode, 'value', -1) in (0, 2, 4) for op in temp_ins.operands):
-                            size = 3 if opcode_name in ("MOV", "CALL") else 2
+                        size = 1 + getattr(temp_ins, 'operand_count', 0)
 
                         for i in range(1, size):
                             try:
@@ -570,6 +591,8 @@ class Pipeline:
 
                 self.if_stage = {"pc": current_pc,
                                  "word": word, "words": words, "size": size}
+                self.cpu.write_register(
+                    int(Register.IP), current_pc + 4 * size)
             except Exception:
                 self.if_stage = None
         else:

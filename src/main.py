@@ -31,9 +31,8 @@ def main() -> None:
     isr_base, _ = os.path.splitext(isr_path)
 
     schedule = [
-        (5, 'H'),
-        (6, 'i'),
-        (7, 'm')
+        (1, 'H'),
+        (2, 'i')
     ]
 
     simulator = Simulator()

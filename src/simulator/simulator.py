@@ -13,7 +13,7 @@ class Simulator:
     def __init__(self) -> None:
         self.cpu = CPU()
         self.translator = Translator()
-        self.pipeline = Pipeline(self.cpu)
+        self.pipeline = None
         self.cycle_count = 0
         self.input_schedule: list[tuple[int, str]] = []
         self.next_input_id = 1
@@ -23,15 +23,17 @@ class Simulator:
     def initialize_environment(self, main_source: str, isr_source: str, input_schedule: list[tuple[int, str]] | None = None,
                                main_bin: str | None = None, main_lst: str | None = None,
                                isr_bin: str | None = None, isr_lst: str | None = None) -> None:
-        self.cpu.memory.write(0x0000, 0x0050)
+        self.cpu.memory.write(0x0000, 0x0100)
 
         main_bin_data = self.translator.assemble(
             main_source, start_address=0x0040, bin_path=main_bin, lst_path=main_lst)
         Loader.load(self.cpu, main_bin_data, start_address=0x0040)
 
         isr_bin_data = self.translator.assemble(
-            isr_source, start_address=0x0050, bin_path=isr_bin, lst_path=isr_lst)
-        Loader.load(self.cpu, isr_bin_data, start_address=0x0050)
+            isr_source, start_address=0x0100, bin_path=isr_bin, lst_path=isr_lst)
+        Loader.load(self.cpu, isr_bin_data, start_address=0x0100)
+
+        self.pipeline = Pipeline(self.cpu)
 
         if input_schedule is not None:
             self.input_schedule = input_schedule
@@ -98,6 +100,8 @@ class Simulator:
                             print("P2.INPUT_READY <- 1")
                             print("Trap Request Raised")
 
+            self.pipeline.tick()
+
             flags = self.cpu.read_register(int(Register.FLAGS))
             if self.cpu.trap_request and (flags & 0x10) != 0:
                 if is_verbose and self.current_resumed_id is not None:
@@ -115,7 +119,6 @@ class Simulator:
                     self.cpu, return_pc=return_address)
                 self.cpu.trap_request = False
 
-            self.pipeline.tick()
             self.cycle_count += 1
 
     def print_report(self) -> None:
