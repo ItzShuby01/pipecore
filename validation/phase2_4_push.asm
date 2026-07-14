@@ -1,3 +1,0 @@
-MOV #55, R1
-PUSH R1
-HALT

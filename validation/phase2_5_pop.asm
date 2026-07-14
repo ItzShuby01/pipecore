@@ -1,4 +1,0 @@
-MOV #99, R1
-PUSH R1
-POP R2
-HALT

@@ -1,0 +1,4 @@
+MOV #50, R1
+MOV #20, R2
+SUB R1, R2, R3
+HALT

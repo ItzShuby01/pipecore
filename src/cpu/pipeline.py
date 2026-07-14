@@ -478,12 +478,17 @@ class Pipeline:
                     lines.append(f"{dst_short} <- {res}")
             elif len(ins.operands) == 1:
                 op = ins.operands[0]
-                val = self._resolve_operand_value(op)
+                post_val = self._resolve_operand_value(op)
                 op_short = self._get_operand_short_name(op)
-                res = val + 1 if ins.opcode == Opcode.INC else val - 1
-                op_char = "+ 1" if ins.opcode == Opcode.INC else "- 1"
-                lines.append(f"{val} {op_char} = {res}")
-                lines.append(f"{op_short} <- {res}")
+
+                if ins.opcode == Opcode.INC:
+                    pre_val = post_val - 1
+                    lines.append(f"{pre_val} + 1 = {post_val}")
+                else:
+                    pre_val = post_val + 1
+                    lines.append(f"{pre_val} - 1 = {post_val}")
+
+                lines.append(f"{op_short} <- {post_val}")
 
         elif ins.opcode in (Opcode.JMP, Opcode.JZ, Opcode.JNZ, Opcode.JLT, Opcode.JGT, Opcode.CALL, Opcode.RET):
             lines.extend([""])

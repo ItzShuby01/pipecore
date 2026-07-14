@@ -1,3 +1,0 @@
-MOV #789, R1
-STORE R1, [0x0200]
-HALT

@@ -1,0 +1,4 @@
+MOV #17, R1
+MOV #5, R2
+MOD R1, R2, R3
+HALT

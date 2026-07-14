@@ -1,0 +1,3 @@
+MOV #9, R1
+INC R1
+HALT
