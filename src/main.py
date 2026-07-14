@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import sys
 import os
+from typing import Any
 from src.simulator.simulator import Simulator
 
 
@@ -30,10 +31,7 @@ def main() -> None:
     main_base, _ = os.path.splitext(main_path)
     isr_base, _ = os.path.splitext(isr_path)
 
-    schedule = [
-        (1, 'H'),
-        (2, 'i')
-    ]
+    schedule: list[Any] = []
 
     simulator = Simulator()
     simulator.initialize_environment(

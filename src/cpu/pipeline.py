@@ -210,7 +210,14 @@ class Pipeline:
                 Register) else f"R{op.value}"
             return f"Register Indirect ([{reg_name}])"
         elif getattr(mode, 'name', '') == "INDEXED" or getattr(mode, 'value', -1) == 4:
-            return f"Indexed (MEM[{Register(op.value).name} + Offset])"
+            base_reg_idx = (op.value >> 16) & 0xFFFF
+            offset = op.value & 0xFFFF
+            if offset & 0x8000:
+                offset -= 0x10000
+            reg_name = Register(base_reg_idx).name if base_reg_idx in list(
+                Register) else f"R{base_reg_idx}"
+            sign = "+" if offset >= 0 else ""
+            return f"Indexed (MEM[{reg_name} {sign} {offset}])"
         return f"Unknown ({op.value})"
 
     def _get_operand_short_name(self, op: Any) -> str:
@@ -226,7 +233,14 @@ class Pipeline:
                 Register) else f"R{op.value}"
             return f"[{reg_name}]"
         elif getattr(mode, 'name', '') == "INDEXED" or getattr(mode, 'value', -1) == 4:
-            return f"[{Register(op.value).name}+Offset]"
+            base_reg_idx = (op.value >> 16) & 0xFFFF
+            offset = op.value & 0xFFFF
+            if offset & 0x8000:
+                offset -= 0x10000
+            reg_name = Register(base_reg_idx).name if base_reg_idx in list(
+                Register) else f"R{base_reg_idx}"
+            sign = "+" if offset >= 0 else ""
+            return f"[{reg_name}{sign}{offset}]"
         return f"op_{op.value}"
 
     def _resolve_operand_value(self, op: Any) -> int:
@@ -246,6 +260,26 @@ class Pipeline:
                 return int(self.cpu.memory.read(addr))
             except Exception:
                 return 0
+        elif getattr(mode, 'name', '') == "INDEXED" or getattr(mode, 'value', -1) == 4:
+            try:
+                addr = self._get_effective_address(op)
+                return int(self.cpu.memory.read(addr))
+            except Exception:
+                return 0
+        return int(op.value)
+
+    def _get_effective_address(self, op: Any) -> int:
+        mode = op.mode
+        if getattr(mode, 'name', '') == "DIRECT_MEMORY" or getattr(mode, 'value', -1) == 2:
+            return int(op.value)
+        elif getattr(mode, 'name', '') == "REGISTER_INDIRECT" or getattr(mode, 'value', -1) == 3:
+            return int(self.cpu.read_register(op.value))
+        elif getattr(mode, 'name', '') == "INDEXED" or getattr(mode, 'value', -1) == 4:
+            base_reg = (op.value >> 16) & 0xFFFF
+            offset = op.value & 0xFFFF
+            if offset & 0x8000:
+                offset -= 0x10000
+            return int((self.cpu.read_register(base_reg) + offset) & 0xFFFF)
         return int(op.value)
 
     def _generate_dynamic_id_details(self, ins: Any, word: int) -> str:
@@ -382,10 +416,7 @@ class Pipeline:
             if len(ins.operands) >= 2:
                 src_op = ins.operands[0]
                 dst_op = ins.operands[1]
-                is_direct = getattr(src_op.mode, 'name', '') == 'DIRECT_MEMORY' or getattr(
-                    src_op.mode, 'value', -1) == 2
-                addr = src_op.value if is_direct else self._resolve_operand_value(
-                    src_op)
+                addr = self._get_effective_address(src_op)
                 val = self._resolve_operand_value(src_op)
                 dst_short = self._get_operand_short_name(dst_op)
                 lines.extend([
@@ -399,10 +430,7 @@ class Pipeline:
             if len(ins.operands) >= 2:
                 src_op = ins.operands[0]
                 dst_op = ins.operands[1]
-                is_direct = getattr(dst_op.mode, 'name', '') == 'DIRECT_MEMORY' or getattr(
-                    dst_op.mode, 'value', -1) == 2
-                addr = dst_op.value if is_direct else self._resolve_operand_value(
-                    dst_op)
+                addr = self._get_effective_address(dst_op)
                 src_short = self._get_operand_short_name(src_op)
                 lines.extend([
                     "",
@@ -637,15 +665,6 @@ class Pipeline:
 
         self._log_pipeline_state(
             if_verbose, id_verbose, ex_verbose, current_if, current_id, current_ex)
-
-        if not self.cpu.running and not getattr(self, '_final_reported', False):
-            self._final_reported = True
-            p1_val = f"'{self._out_buffer}'" if self._out_buffer else "empty"
-            print("Ports Final State")
-            print("-----------------")
-            print("P0 : empty")
-            print(f"P1 : {p1_val}")
-            print("P2 : INPUT_READY=0\n")
 
     def _log_pipeline_state(self, if_v: str | None = None, id_v: str | None = None, ex_v: str | None = None,
                             snap_if: PipelineStage | None = None, snap_id: PipelineStage | None = None, snap_ex: PipelineStage | None = None) -> None:

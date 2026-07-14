@@ -25,6 +25,21 @@ class Translator:
             if token.instruction_text:
                 p_inst = Parser.parse_line(
                     token.instruction_text, token.line_number)
+
+                if p_inst.mnemonic.upper() == "STORE":
+                    if len(p_inst.operands) != 2:
+                        raise SyntaxError(
+                            f"Line {token.line_number}: STORE requires exactly 2 operands."
+                        )
+                    if p_inst.operands[0].mode != 1:
+                        raise SyntaxError(
+                            f"Line {token.line_number}: STORE source operand must be a Register."
+                        )
+                    if p_inst.operands[1].mode not in (2, 3, 4):
+                        raise SyntaxError(
+                            f"Line {token.line_number}: STORE destination operand must be a Memory location."
+                        )
+
                 instructions_to_encode.append((current_address, p_inst))
                 current_address += 4 * (1 + len(p_inst.operands))
 
