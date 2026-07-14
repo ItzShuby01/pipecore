@@ -523,13 +523,19 @@ class Pipeline:
                 op = ins.operands[0]
                 val = self._resolve_operand_value(op)
                 op_short = self._get_operand_short_name(op)
-                sp = self.cpu.read_register(int(Register.SP))
+                current_sp = self.cpu.read_register(int(Register.SP))
+
                 if ins.opcode == Opcode.PUSH:
-                    lines.extend(
-                        [f"MEM[0x{(sp - 4) & 0xFFFF:04X}] <- {val}", f"SP <- 0x{(sp - 4) & 0xFFFF:04X}"])
+                    lines.extend([
+                        f"MEM[0x{current_sp:04X}] <- {val}",
+                        f"SP <- 0x{current_sp:04X}"
+                    ])
                 else:
-                    lines.extend(
-                        [f"{op_short} <- MEM[0x{sp:04X}]", f"SP <- 0x{(sp + 4) & 0xFFFF:04X}"])
+                    source_addr = (current_sp - 4) & 0xFFFF
+                    lines.extend([
+                        f"{op_short} <- MEM[0x{source_addr:04X}]",
+                        f"SP <- 0x{current_sp:04X}"
+                    ])
 
         elif ins.opcode in (Opcode.HALT, Opcode.NOP):
             lines.extend([""])

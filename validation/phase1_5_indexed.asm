@@ -1,0 +1,5 @@
+MOV #1000, R1
+MOV #250, R2
+STORE R2, [R1 + 16]
+LOAD [R1 + 16], R3
+HALT
