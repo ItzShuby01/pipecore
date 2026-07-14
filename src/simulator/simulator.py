@@ -13,7 +13,7 @@ class Simulator:
     def __init__(self) -> None:
         self.cpu = CPU()
         self.translator = Translator()
-        self.pipeline = None
+        self.pipeline: Pipeline | None = None
         self.cycle_count = 0
         self.input_schedule: list[tuple[int, str]] = []
         self.next_input_id = 1
@@ -39,6 +39,8 @@ class Simulator:
             self.input_schedule = input_schedule
 
     def run(self) -> None:
+        assert self.pipeline is not None
+
         is_silent = "silent" in sys.argv or "s" in sys.argv
         is_verbose = "verbose" in sys.argv or "v" in sys.argv
 
