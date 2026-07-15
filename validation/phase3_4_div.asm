@@ -1,4 +1,0 @@
-MOV #100, R1
-MOV #4, R2
-DIV R1, R2, R3
-HALT

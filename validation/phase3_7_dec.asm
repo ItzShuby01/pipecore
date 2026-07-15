@@ -1,3 +1,0 @@
-MOV #20, R1
-DEC R1
-HALT

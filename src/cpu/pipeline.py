@@ -471,10 +471,12 @@ class Pipeline:
                 val_b = self._resolve_operand_value(src_op)
                 dst_short = self._get_operand_short_name(dst_op)
 
-                res = val_a
-                op_char = "-" if ins.opcode == Opcode.CMP else "?"
-                lines.append(f"{val_a} {op_char} {val_b} = {res}")
-                if ins.opcode != Opcode.CMP:
+                if ins.opcode == Opcode.CMP:
+                    res = val_b - val_a
+                    lines.append(f"{val_b} - {val_a} = {res}")
+                else:
+                    res = val_a
+                    lines.append(f"{val_a} ? {val_b} = {res}")
                     lines.append(f"{dst_short} <- {res}")
             elif len(ins.operands) == 1:
                 op = ins.operands[0]

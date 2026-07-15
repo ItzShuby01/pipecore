@@ -1,4 +1,0 @@
-MOV #6, R1
-MOV #7, R2
-MUL R1, R2, R3
-HALT
