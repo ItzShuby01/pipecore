@@ -1,4 +1,0 @@
-MOV #42, R1
-MOV #42, R2
-CMP R1, R2
-HALT
