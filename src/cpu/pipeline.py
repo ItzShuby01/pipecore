@@ -512,17 +512,40 @@ class Pipeline:
                     lines.extend(["Flush IF", "Flush ID"])
 
             elif ins.opcode == Opcode.CALL:
-                if len(ins.operands) > 0:
-                    lines.append(f"PC <- 0x{ins.operands[0].value:04X}")
-                lines.extend(["Flush IF", "Flush ID"])
-            elif ins.opcode == Opcode.RET:
-                sp = self.cpu.read_register(int(Register.SP))
+                current_sp = self.cpu.read_register(int(Register.SP))
                 try:
-                    ret_addr = self.cpu.memory.read(sp)
-                    lines.append(f"PC <- 0x{ret_addr:04X}")
+                    ret_addr = self.cpu.memory.read(current_sp)
                 except Exception:
-                    lines.append("PC <- Stack Return Address")
-                lines.extend(["Flush IF", "Flush ID"])
+                    ret_addr = 0
+
+                target = ins.operands[0].value if len(ins.operands) > 0 else 0
+
+                lines.extend([
+                    f"Push return address: 0x{ret_addr:04X}",
+                    f"MEM[0x{current_sp:04X}] <- 0x{ret_addr:04X}",
+                    f"SP <- 0x{current_sp:04X}",
+                    "",
+                    f"PC <- 0x{target:04X}",
+                    "Flush IF",
+                    "Flush ID"
+                ])
+
+            elif ins.opcode == Opcode.RET:
+                current_sp = self.cpu.read_register(int(Register.SP))
+                old_sp = (current_sp - 4) & 0xFFFF
+                try:
+                    ret_addr = self.cpu.memory.read(old_sp)
+                except Exception:
+                    ret_addr = 0
+
+                lines.extend([
+                    f"Pop return address: 0x{ret_addr:04X}",
+                    f"SP <- 0x{current_sp:04X}",
+                    "",
+                    f"PC <- 0x{ret_addr:04X}",
+                    "Flush IF",
+                    "Flush ID"
+                ])
 
         elif ins.opcode in (Opcode.PUSH, Opcode.POP):
             lines.extend([""])
@@ -570,6 +593,7 @@ class Pipeline:
             if "HALT" in opcode_name:
                 self.cpu.running = False
             else:
+                setattr(self.cpu, "current_instruction_pc", current_ex["pc"])
                 ip_before = self.cpu.read_register(int(Register.IP))
 
                 with ContextSilencer():
@@ -577,7 +601,24 @@ class Pipeline:
 
                 ip_after = self.cpu.read_register(int(Register.IP))
 
-                if ip_before != ip_after or ins.opcode == Opcode.IRET:
+                branch_taken = False
+                if ins.opcode in (Opcode.JMP, Opcode.CALL, Opcode.RET, Opcode.IRET):
+                    branch_taken = True
+                elif ins.opcode in (Opcode.JZ, Opcode.JNZ, Opcode.JLT, Opcode.JGT):
+                    flags = self.cpu.read_register(int(Register.FLAGS))
+                    z = bool(flags & (1 << 0))
+                    n = bool(flags & (1 << 1))
+                    v = bool(flags & (1 << 3))
+                    if ins.opcode == Opcode.JZ and z:
+                        branch_taken = True
+                    elif ins.opcode == Opcode.JNZ and not z:
+                        branch_taken = True
+                    elif ins.opcode == Opcode.JLT and (n != v):
+                        branch_taken = True
+                    elif ins.opcode == Opcode.JGT and (not z and (n == v)):
+                        branch_taken = True
+
+                if branch_taken or ip_before != ip_after:
                     self.flush()
                     flushed = True
 

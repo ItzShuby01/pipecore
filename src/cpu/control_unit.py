@@ -258,7 +258,11 @@ def execute_jgt(cpu: CPU, instruction: Instruction) -> None:
 
 def execute_call(cpu: CPU, instruction: Instruction) -> None:
     target_address = read_operand(cpu, instruction.operands[0])
-    return_address = cpu.read_register(int(Register.IP))
+    instr_pc = getattr(cpu, 'current_instruction_pc',
+                       cpu.read_register(int(Register.IP)))
+    size = 1 + len(instruction.operands)
+    return_address = instr_pc + 4 * size
+
     current_sp = cpu.read_register(int(Register.SP))
     new_sp = (current_sp - 4) & 0xFFFF
     cpu.write_register(int(Register.SP), new_sp)
