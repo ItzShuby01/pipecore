@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import sys
 import os
-from typing import Any
 from src.simulator.simulator import Simulator
 from src.simulator.config import load_input_schedule
 
