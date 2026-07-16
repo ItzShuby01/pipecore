@@ -57,24 +57,32 @@ PipeCore uses a simple port-based I/O :
 
 Input is **via interrupt**
 
-The simulator maintains an input schedule:
-
-**[(tick, token)]**
+The simulator maintains an input schedule via `input_schedule.json` file. The Simulator automotically loads this file upon starting to check for input events:
 
 Example:
+```
+{
+    "events": [
+        {
+            "tick": 10,
+            "token": "A"
+        }
+    ]
+}
+```
 
-```(10, 'A') = At tick 10, value 'A' becomes available.```
+ `=>` At tick 10, value 'A' becomes available.
 
 
 Input event occurs when the current simulation tick reaches the scheduled tick. When it happens, the similator does these:
 
-• writes the token to input port **P0**
+• writes the token to input port `P0`
 
-• updates **P2** status port
+• sets `P2` status port  (`P2.INPUT_READY <- 1`);
 
 • asserts an interrupt request
 
-**NB:** The CPU is unaware of the schedule.
+**Note that,** the CPU is unaware of the schedule.
 
 
 
@@ -95,6 +103,7 @@ Then the processor
 
 7. Returns using IRET.
 
+`NB:` While an interrupt handler is executing, interrupts are disabled. If another input event occurs during this time, it remains pending. After `IRET` restores the previous processor state and interrupts are **enabled**, the pending interrupt may then be accepted.
 
 ## Output Model
 
