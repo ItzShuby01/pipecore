@@ -4,6 +4,7 @@ import sys
 import os
 from typing import Any
 from src.simulator.simulator import Simulator
+from src.simulator.config import load_input_schedule
 
 
 def main() -> None:
@@ -31,7 +32,11 @@ def main() -> None:
     main_base, _ = os.path.splitext(main_path)
     isr_base, _ = os.path.splitext(isr_path)
 
-    schedule: list[Any] = []
+    try:
+        schedule = load_input_schedule("input_schedule.json")
+    except Exception as e:
+        print(f"Configuration Error: {e}")
+        sys.exit(1)
 
     simulator = Simulator()
     simulator.initialize_environment(

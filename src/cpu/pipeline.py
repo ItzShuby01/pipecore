@@ -152,6 +152,7 @@ class Pipeline:
     def flush(self) -> None:
         self.if_stage = None
         self.id_stage = None
+        self.ex_stage = None
 
     def get_interrupt_return_address(self) -> int:
         if self.ex_stage is not None:

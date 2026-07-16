@@ -1,0 +1,16 @@
+{
+    "events": [
+        {
+            "tick": 2,
+            "token": "H"
+        },
+        {
+            "tick": 3,
+            "token": "I"
+        },
+        {
+            "tick": 4,
+            "token": "!"
+        }
+    ]
+}
