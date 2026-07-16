@@ -27,6 +27,7 @@
 
 <variable-declaration> ::= "var" <identifier> [ ":" <type> ] ";"
 
+
 <procedure-declaration> ::= "procedure" <identifier>
                             "(" [ <parameter-list> ] ")"
                             "{"
@@ -34,15 +35,15 @@
                             "}"
 
 
+<parameter-list> ::= <parameter> { "," <parameter> }
+
+<parameter> ::= <identifier> ":" <type>
+
+
 <interrupt-declaration> ::= "interrupt" "input"
                             "{"
                                 { <declaration> | <statement> }
                             "}"
-
-
-<parameter-list> ::= <parameter> { "," <parameter> }
-
-<parameter> ::= <identifier> [ ":" <type> ]
 
 
 <statement> ::= <assignment>
@@ -113,11 +114,13 @@
 <type> ::= "int"
          | "char"
          | "string"
+         | "boolean"
 
 
 <literal> ::= <integer-literal>
             | <character-literal>
             | <string-literal>
+            | <boolean-literal>
 
 
 <integer-literal> ::= <digit> { <digit> }
@@ -126,6 +129,8 @@
 
 <string-literal> ::= "\"" { <string-character> } "\""
 
+<boolean-literal> ::= "true"
+                    | "false"
 
 <identifier> ::= <letter> { <letter> | <digit> | "_" }
 
@@ -146,10 +151,12 @@
 
 - Expressions are evaluated eagerly;
 - Operands are evaluated from left to right;
-- Arithmetic operators follow the standard precedence rules.;
+- Arithmetic operators follow the standard precedence rules;
 - Only the selected branch of an `if` statement is executed;
 - `while` evaluates its condition before every iteration;
 - Procedure arguments are evaluated before the procedure is called;
+- `return <expression>;` evaluates the expression and terminates the current procedure. The resulting value is passed back to the caller.
+- `return;` terminates the current procedure without returning a value.
 
 
 Operator precedence **(highest to lowest):**
@@ -162,7 +169,7 @@ Operator precedence **(highest to lowest):**
 Also:
 - Integer division is signed integer division.
 
-* Comparison operations return a `boolean`.
+* Comparison operations return a `boolean` value.
 
 ---
 
@@ -185,8 +192,10 @@ Also:
 | `int`    | signed 32-bit integer                           |
 | `char`   | one character represented by its character code |
 | `string` | sequence of characters stored in `pstr` format  |
+| `boolean` | logical truth value                             |
 
-Variable's type is fixed after declaration. Assignments and operands in expressions must have compatible types.
+- Variable's type is fixed after declaration. Assignments and operands in expressions must have compatible types.
+- Comparison operators return a `boolean` value. `true` represents a true condition and `false` represents a false condition.
 
 ---
 
@@ -259,7 +268,7 @@ The condition is evaluated before every iteration. The loop terminates when the 
 
 ### Procedures
 
-Procedures are declared using:
+- Procedures are declared using:
 
 ```text
 procedure name(parameters) {
@@ -267,7 +276,9 @@ procedure name(parameters) {
 }
 ```
 
-Example:
+- A procedure may return a value using `return`.
+
+**Example:**
 
 ```text
 procedure add(a: int, b: int) {
@@ -275,13 +286,35 @@ procedure add(a: int, b: int) {
 }
 ```
 
-A procedure is called using:
+- A procedure may also return without a value:
+
+**Example:**
+
+```text
+procedure print_hello() {
+    output('H');
+    return;
+}
+```
+
+- A procedure is called using:
 
 ```text
 add(10, 20);
 ```
 
-Procedure calls are translated into `CALL` and `RET` instructions. The return address is stored and returned from the stack.
+- The value returned by a procedure may be used in an expression:
+
+**Example:**
+
+```text
+var result: int;
+
+result := add(10, 20);
+output(result);
+```
+
+Procedure calls are translated into `CALL` and `RET` instructions. The return address is stored and restored from the stack when the procedure returns.
 
 ---
 
