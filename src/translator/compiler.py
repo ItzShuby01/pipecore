@@ -62,6 +62,8 @@ class SemanticAnalyzer:
                 self.analyze_procedure(decl)
             elif isinstance(decl, InterruptDecl):
                 self.analyze_interrupt(decl)
+            elif isinstance(decl, Stmt):
+                self.analyze_stmt(decl)
 
     def analyze_global_var(self, decl: VarDecl) -> None:
         if self.global_table.lookup(decl.name):
@@ -144,7 +146,7 @@ class SemanticAnalyzer:
         elif isinstance(stmt, InputStmt):
             if not self.in_interrupt_context:
                 raise SyntaxError(
-                    f"Line {stmt.line}: semantic error: input() is only valid inside the input interrupt handler.")
+                    f"Line {stmt.line}: input() may only be used inside an input interrupt handler")
             sym = self.current_table.lookup(stmt.name)
             if not sym:
                 raise SyntaxError(
@@ -215,7 +217,7 @@ class SemanticAnalyzer:
             if expr.name == "input":
                 if not self.in_interrupt_context:
                     raise SyntaxError(
-                        f"Line {expr.line}: semantic error: input() is only valid inside the input interrupt handler.")
+                        f"Line {expr.line}: input() may only be used inside an input interrupt handler")
                 return "int"
             if not self.global_table.lookup(expr.name):
                 raise SyntaxError(

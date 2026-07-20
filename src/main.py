@@ -99,12 +99,15 @@ def main() -> None:
             bin_file = base_path + ".bin"
             lst_file = base_path + ".lst"
 
+        is_isr = "isr" in os.path.basename(alg_file).lower()
+        target_start_address = 0x0100 if is_isr else 0x0040
+
         asm_content = compile_alg_to_asm(alg_file)
         with open(asm_file, "w") as f:
             f.write(asm_content)
 
         assembler = AssemblerTranslator()
-        assembler.assemble(asm_content, start_address=0x0100,
+        assembler.assemble(asm_content, start_address=target_start_address,
                            bin_path=bin_file, lst_path=lst_file)
         print(
             f"Compilation successful:\n  {asm_file}\n  {bin_file}\n  {lst_file}")
