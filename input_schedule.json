@@ -6,11 +6,7 @@
         },
         {
             "tick": 3,
-            "token": "I"
-        },
-        {
-            "tick": 4,
-            "token": "!"
+            "token": "i"
         }
     ]
 }

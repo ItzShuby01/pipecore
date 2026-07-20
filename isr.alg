@@ -1,0 +1,3 @@
+interrupt input {
+    output(input());
+}

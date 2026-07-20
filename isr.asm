@@ -1,3 +1,0 @@
-IN P0, R1
-OUT P1, R1
-IRET
