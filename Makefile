@@ -1,7 +1,7 @@
-.PHONY: install run lint typecheck test check all clean
+.PHONY: install compile-alg run-alg run-asm run-bin lint typecheck test check all clean
 
-RUN_ARGS := $(wordlist 2,$(words $(MAKECMDGOALS)),$(MAKECMDGOALS))
-$(eval $(RUN_ARGS):;@:)
+ARGS := $(wordlist 2,$(words $(MAKECMDGOALS)),$(MAKECMDGOALS))
+$(eval $(ARGS):;@:)
 
 ifeq ($(mode),verbose)
     MODE_FLAG := verbose
@@ -16,8 +16,17 @@ endif
 install:
 	pip install -e ".[dev]"
 
-run:
-	python -m src.main $(RUN_ARGS) $(MODE_FLAG)
+compile-alg:
+	python -m src.main compile-alg $(ARGS) $(if $(OUT),OUT=$(OUT))
+
+run-alg:
+	python -m src.main run-alg $(ARGS) $(MODE_FLAG)
+
+run-asm:
+	python -m src.main run-asm $(ARGS) $(MODE_FLAG)
+
+run-bin:
+	python -m src.main run-bin $(ARGS) $(MODE_FLAG)
 
 lint:
 	ruff check .
@@ -30,7 +39,7 @@ test:
 
 check: lint typecheck test
 
-all: run check
+all: check
 
 clean:
 	find . -type d -name "__pycache__" -exec rm -rf {} +
