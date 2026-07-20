@@ -8,7 +8,7 @@ if TYPE_CHECKING:
     from src.cpu.datapath import CPU
 
 
-def decode(word: int, cpu: CPU, base_pc: int = None) -> Instruction:
+def decode(word: int, cpu: CPU, base_pc: int | None = None) -> Instruction:
     opcode = Opcode((word >> 24) & 0xFF)
     operand_count = (word >> 20) & 0xF
 

@@ -33,7 +33,7 @@ class SymbolTable:
 
 
 class SemanticAnalyzer:
-    def __init__(self):
+    def __init__(self) -> None:
         self.global_table = SymbolTable()
         self.current_table = self.global_table
         self.static_alloc_ptr = 0x1000
@@ -114,7 +114,7 @@ class SemanticAnalyzer:
         self.current_table = self.global_table
         self.in_interrupt_context = False
 
-    def analyze_stmt(self, stmt: VarDecl | AssignStmt | IfStmt | WhileStmt | ReturnStmt | OutputStmt | InputStmt) -> None:
+    def analyze_stmt(self, stmt: Stmt) -> None:
         if isinstance(stmt, VarDecl):
             if stmt.var_type.name == "string":
                 raise SyntaxError(
@@ -279,6 +279,7 @@ class CodeGenerator:
             if isinstance(decl, VarDecl) and decl.init_expr:
                 self.generate_expr(decl.init_expr, "R0")
                 sym = self.analyzer.global_table.lookup(decl.name)
+                assert sym is not None
                 self.emit(f"STORE R0, [{sym.address}]")
 
         main_proc = self.analyzer.global_table.lookup("main")
@@ -320,11 +321,13 @@ class CodeGenerator:
             if stmt.init_expr:
                 self.generate_expr(stmt.init_expr, "R1")
                 sym = self.analyzer.current_table.lookup(stmt.name)
+                assert sym is not None
                 self.emit(f"STORE R1, [R2 + {sym.stack_offset}]")
 
         elif isinstance(stmt, AssignStmt):
             self.generate_expr(stmt.expr, "R1")
             sym = self.analyzer.current_table.lookup(stmt.name)
+            assert sym is not None
             if sym.is_global:
                 self.emit(f"STORE R1, [{sym.address}]")
             else:
@@ -333,6 +336,7 @@ class CodeGenerator:
         elif isinstance(stmt, InputStmt):
             self.emit("IN P0, R1")
             sym = self.analyzer.current_table.lookup(stmt.name)
+            assert sym is not None
             if sym.is_global:
                 self.emit(f"STORE R1, [{sym.address}]")
             else:
@@ -394,13 +398,14 @@ class CodeGenerator:
             self.emit(f"MOV {val}, {reg_dst}")
         elif isinstance(expr, StringLiteral):
             found_addr = None
-            for addr, val in self.analyzer.string_literals:
-                if val == expr.value:
-                    found_addr = addr
+            for lit_addr, lit_val in self.analyzer.string_literals:
+                if lit_val == expr.value:
+                    found_addr = lit_addr
                     break
             self.emit(f"MOV {found_addr}, {reg_dst}")
         elif isinstance(expr, VariableExpr):
             sym = self.analyzer.current_table.lookup(expr.name)
+            assert sym is not None
             if sym.is_global:
                 self.emit(f"LOAD [{sym.address}], {reg_dst}")
             else:

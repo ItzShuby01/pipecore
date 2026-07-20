@@ -180,6 +180,7 @@ class Lexer:
 
         for mo in re.finditer(tok_regex, source_code):
             kind = mo.lastgroup
+            assert kind is not None
             value = mo.group(kind)
 
             if kind == "NEWLINE":
@@ -223,7 +224,7 @@ class Parser:
         return False
 
     def parse_program(self) -> Program:
-        decls = []
+        decls: list[ASTNode] = []
         first_line = self.current_token().line
         while self.current_token().type != "EOF":
             tok = self.current_token()
@@ -353,7 +354,10 @@ class Parser:
             expr = self.parse_expr()
             self.consume("SEMI")
             if isinstance(expr, CallExpr) and expr.name == "output":
-                return OutputStmt(line=tok.line, expr=expr.args[0] if expr.args else None)
+                if not expr.args:
+                    raise SyntaxError(
+                        f"Line {tok.line}: output() requires an argument.")
+                return OutputStmt(line=tok.line, expr=expr.args[0])
             return ReturnStmt(line=tok.line, expr=expr)
 
     def parse_block(self) -> list[Stmt]:
