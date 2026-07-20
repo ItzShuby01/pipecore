@@ -127,7 +127,7 @@ class Pipeline:
                 try:
                     with ContextSilencer():
                         saved_ip = self.cpu.read_register(int(Register.IP))
-                        temp_ins = decode(word, self.cpu)
+                        temp_ins = decode(word, self.cpu, base_pc=current_pc)
                         self.cpu.write_register(int(Register.IP), saved_ip)
 
                     if temp_ins is not None:
@@ -636,7 +636,8 @@ class Pipeline:
                     self.cpu.write_register(
                         int(Register.IP), current_if["pc"] + 4)
 
-                    decoded_ins = decode(current_if["word"], self.cpu)
+                    decoded_ins = decode(
+                        current_if["word"], self.cpu, base_pc=current_if["pc"])
 
                     self.cpu.write_register(
                         int(Register.IP), saved_pipeline_ip)
@@ -657,7 +658,7 @@ class Pipeline:
                 try:
                     with ContextSilencer():
                         saved_ip = self.cpu.read_register(int(Register.IP))
-                        temp_ins = decode(word, self.cpu)
+                        temp_ins = decode(word, self.cpu, base_pc=current_pc)
                         self.cpu.write_register(int(Register.IP), saved_ip)
 
                     if temp_ins is not None:

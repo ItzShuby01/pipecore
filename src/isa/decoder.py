@@ -8,7 +8,7 @@ if TYPE_CHECKING:
     from src.cpu.datapath import CPU
 
 
-def decode(word: int, cpu: CPU, base_pc: int | None = None) -> Instruction:
+def decode(word: int, cpu: CPU, base_pc: int = None) -> Instruction:
     opcode = Opcode((word >> 24) & 0xFF)
     operand_count = (word >> 20) & 0xF
 
@@ -25,8 +25,7 @@ def decode(word: int, cpu: CPU, base_pc: int | None = None) -> Instruction:
 
     operands: list[Operand] = []
     for i in range(operand_count):
-        target_addr = base_pc + 4 + (i * 4)
-        operand_word = cpu.memory.read(target_addr)
+        operand_word = cpu.memory.read(base_pc + 4 + (i * 4))
         operands.append(Operand(mode=modes[i], value=operand_word))
 
     return Instruction(
