@@ -3,112 +3,117 @@ import re
 from dataclasses import dataclass, field
 
 
-@dataclass
+@dataclass(eq=False)
 class ASTNode:
     line: int
 
 
-@dataclass
+@dataclass(eq=False)
 class TypeNode(ASTNode):
     name: str  # 'int', 'char', 'string', 'boolean'
 
 
-@dataclass
+@dataclass(eq=False)
 class Expr(ASTNode):
     pass
 
 
-@dataclass
+@dataclass(eq=False)
 class IntLiteral(Expr):
     value: int
 
 
-@dataclass
+@dataclass(eq=False)
 class CharLiteral(Expr):
     value: str
 
 
-@dataclass
+@dataclass(eq=False)
 class StringLiteral(Expr):
     value: str
 
 
-@dataclass
+@dataclass(eq=False)
 class BoolLiteral(Expr):
     value: bool
 
 
-@dataclass
+@dataclass(eq=False)
 class VariableExpr(Expr):
     name: str
 
 
-@dataclass
+@dataclass(eq=False)
 class BinOpExpr(Expr):
     left: Expr
     op: str  # '+', '-', '*', '/', '%', '==', '!=', '<', '<=', '>', '>='
     right: Expr
 
 
-@dataclass
+@dataclass(eq=False)
 class CallExpr(Expr):
     name: str
     args: list[Expr]
 
 
-@dataclass
+@dataclass(eq=False)
 class Stmt(ASTNode):
     pass
 
 
-@dataclass
+@dataclass(eq=False)
 class VarDecl(Stmt):
     name: str
     var_type: TypeNode
     init_expr: Expr | None = None
 
 
-@dataclass
+@dataclass(eq=False)
 class AssignStmt(Stmt):
     name: str
     expr: Expr
 
 
-@dataclass
+@dataclass(eq=False)
 class IfStmt(Stmt):
     condition: Expr
     then_branch: list[Stmt]
     else_branch: list[Stmt] = field(default_factory=list)
 
 
-@dataclass
+@dataclass(eq=False)
 class WhileStmt(Stmt):
     condition: Expr
     body: list[Stmt]
 
 
-@dataclass
+@dataclass(eq=False)
 class ReturnStmt(Stmt):
     expr: Expr | None = None
 
 
-@dataclass
+@dataclass(eq=False)
 class InputStmt(Stmt):
     name: str
 
 
-@dataclass
+@dataclass(eq=False)
 class OutputStmt(Stmt):
     expr: Expr
 
 
-@dataclass
+@dataclass(eq=False)
+class ExprStmt(Stmt):
+    expr: Expr
+
+
+@dataclass(eq=False)
 class Param(ASTNode):
     name: str
     param_type: TypeNode
 
 
-@dataclass
+@dataclass(eq=False)
 class ProcedureDecl(ASTNode):
     name: str
     params: list[Param]
@@ -116,13 +121,13 @@ class ProcedureDecl(ASTNode):
     body: list[Stmt]
 
 
-@dataclass
+@dataclass(eq=False)
 class InterruptDecl(ASTNode):
     name: str
     body: list[Stmt]
 
 
-@dataclass
+@dataclass(eq=False)
 class Program(ASTNode):
     decls: list[ASTNode]
 
@@ -145,8 +150,8 @@ class Lexer:
         ("ASSIGN",     r":="),
         ("EQ",         r"=="),
         ("NEQ",        r"!="),
-        ("LEQ",         r"<="),
-        ("GEQ",         r">="),
+        ("LEQ",        r"<="),
+        ("GEQ",        r">="),
         ("LT",         r"<"),
         ("GT",         r">"),
         ("PLUS",       r"\+"),
@@ -242,7 +247,6 @@ class Parser:
         start_tok = self.consume("VAR")
         name = self.consume("ID").value
 
-        var_type = None
         if self.match("COLON"):
             type_tok = self.current_token()
             if type_tok.type not in {"INT", "CHAR", "STRING", "BOOLEAN"}:
@@ -287,7 +291,7 @@ class Parser:
 
         self.consume("LBRACE")
         body = []
-        while self.current_token().type != "RBRACE":
+        while self.current_token().type != "RBRACE" and self.current_token().type != "EOF":
             body.append(self.parse_stmt())
         self.consume("RBRACE")
 
@@ -295,10 +299,15 @@ class Parser:
 
     def parse_interrupt_decl(self) -> InterruptDecl:
         start_tok = self.consume("INTERRUPT")
-        name = self.consume("INPUT").value
+        if self.current_token().type in {"INPUT", "ID"}:
+            name = self.current_token().value
+            self.pos += 1
+        else:
+            raise SyntaxError(
+                f"Line {self.current_token().line}: Expected interrupt name, got '{self.current_token().value}'")
         self.consume("LBRACE")
         body = []
-        while self.current_token().type != "RBRACE":
+        while self.current_token().type != "RBRACE" and self.current_token().type != "EOF":
             body.append(self.parse_stmt())
         self.consume("RBRACE")
         return InterruptDecl(line=start_tok.line, name=name, body=body)
@@ -332,10 +341,6 @@ class Parser:
                 expr = self.parse_expr()
             self.consume("SEMI")
             return ReturnStmt(line=tok.line, expr=expr)
-        elif tok.type == "LBRACE":
-            line = tok.line
-            self.parse_block()
-            return ReturnStmt(line=line, expr=None)
         elif tok.type == "ID" and self.pos + 1 < len(self.tokens) and self.tokens[self.pos + 1].type == "ASSIGN":
             name = tok.value
             self.pos += 2
@@ -358,7 +363,7 @@ class Parser:
                     raise SyntaxError(
                         f"Line {tok.line}: output() requires an argument.")
                 return OutputStmt(line=tok.line, expr=expr.args[0])
-            return ReturnStmt(line=tok.line, expr=expr)
+            return ExprStmt(line=tok.line, expr=expr)
 
     def parse_block(self) -> list[Stmt]:
         self.consume("LBRACE")

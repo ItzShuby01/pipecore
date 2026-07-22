@@ -1,8 +1,8 @@
 from __future__ import annotations
 from dataclasses import dataclass
 from src.translator.alg import (
-    Program, VarDecl, ProcedureDecl, InterruptDecl, AssignStmt, IfStmt,
-    WhileStmt, ReturnStmt, OutputStmt, InputStmt, BinOpExpr, IntLiteral,
+    ASTNode, Program, VarDecl, ProcedureDecl, InterruptDecl, AssignStmt, IfStmt,
+    WhileStmt, ReturnStmt, OutputStmt, InputStmt, ExprStmt, BinOpExpr, IntLiteral,
     CharLiteral, StringLiteral, BoolLiteral, VariableExpr, CallExpr, Expr, Stmt
 )
 
@@ -36,10 +36,12 @@ class SemanticAnalyzer:
     def __init__(self) -> None:
         self.global_table = SymbolTable()
         self.current_table = self.global_table
+        self.scopes: dict[int, SymbolTable] = {}
         self.static_alloc_ptr = 0x1000
         self.string_literals: list[tuple[int, str]] = []
         self.current_procedure: ProcedureDecl | None = None
         self.in_interrupt_context = False
+        self.local_var_offset = -4
 
     def allocate_static(self, size_words: int) -> int:
         addr = self.static_alloc_ptr
@@ -91,6 +93,7 @@ class SemanticAnalyzer:
         self.current_procedure = decl
         local_table = SymbolTable(parent=self.global_table)
         self.current_table = local_table
+        self.scopes[id(decl)] = local_table
 
         offset = 12
         for param in decl.params:
@@ -110,6 +113,7 @@ class SemanticAnalyzer:
         self.in_interrupt_context = True
         local_table = SymbolTable(parent=self.global_table)
         self.current_table = local_table
+        self.scopes[id(decl)] = local_table
         self.local_var_offset = -4
         for stmt in decl.body:
             self.analyze_stmt(stmt)
@@ -156,6 +160,9 @@ class SemanticAnalyzer:
                     f"Line {stmt.line}: System hardware target container target must resolve to int or char scalar variants.")
 
         elif isinstance(stmt, OutputStmt):
+            self.check_expr_type(stmt.expr)
+
+        elif isinstance(stmt, ExprStmt):
             self.check_expr_type(stmt.expr)
 
         elif isinstance(stmt, IfStmt):
@@ -257,8 +264,10 @@ class CodeGenerator:
             return "\n".join(self.instructions)
 
         if has_interrupt:
-            self.emit("MOV _isr_input, R0")
-            self.emit("STORE R0, [0x0000]")
+            for decl in program.decls:
+                if isinstance(decl, InterruptDecl):
+                    self.emit(f"MOV _isr_{decl.name}, R0")
+                    self.emit("STORE R0, [0x0000]")
 
         self.emit("JMP _start")
 
@@ -283,6 +292,8 @@ class CodeGenerator:
                 sym = self.analyzer.global_table.lookup(decl.name)
                 assert sym is not None
                 self.emit(f"STORE R0, [{sym.address}]")
+            elif isinstance(decl, Stmt) and not isinstance(decl, VarDecl):
+                self.generate_stmt(decl)
 
         main_proc = self.analyzer.global_table.lookup("main")
         if main_proc:
@@ -292,12 +303,14 @@ class CodeGenerator:
         return "\n".join(self.instructions)
 
     def generate_procedure(self, decl: ProcedureDecl) -> None:
+        self.analyzer.current_table = self.analyzer.scopes.get(
+            id(decl), self.analyzer.global_table)
         self.emit(f"{decl.name}:")
         self.emit("PUSH R2")
         self.emit("MOV SP, R2")
 
-        local_records = [r for r in self.analyzer.global_table.symbols.values(
-        ) if r.stack_offset and r.stack_offset < 0]
+        local_records = [r for r in self.analyzer.current_table.symbols.values()
+                         if r.stack_offset is not None and r.stack_offset < 0]
         if local_records:
             space = len(local_records) * 4
             self.emit(f"SUB SP, {space}, SP")
@@ -307,16 +320,20 @@ class CodeGenerator:
 
         self.emit("MOV R2, SP")
         self.pop_frame_and_ret()
+        self.analyzer.current_table = self.analyzer.global_table
 
     def pop_frame_and_ret(self) -> None:
         self.emit("POP R2")
         self.emit("RET")
 
     def generate_interrupt(self, decl: InterruptDecl) -> None:
+        self.analyzer.current_table = self.analyzer.scopes.get(
+            id(decl), self.analyzer.global_table)
         self.emit(f"_isr_{decl.name}:")
         for stmt in decl.body:
             self.generate_stmt(stmt)
         self.emit("IRET")
+        self.analyzer.current_table = self.analyzer.global_table
 
     def generate_stmt(self, stmt: Stmt) -> None:
         if isinstance(stmt, VarDecl):
@@ -351,6 +368,9 @@ class CodeGenerator:
             else:
                 self.generate_expr(stmt.expr, "R1")
                 self.emit("OUT P1, R1")
+
+        elif isinstance(stmt, ExprStmt):
+            self.generate_expr(stmt.expr, "R1")
 
         elif isinstance(stmt, ReturnStmt):
             if stmt.expr:
@@ -392,7 +412,7 @@ class CodeGenerator:
 
     def generate_expr(self, expr: Expr, reg_dst: str) -> None:
         if isinstance(expr, IntLiteral):
-            self.emit(f"MOV {expr.value}, {reg_dst}")
+            self.emit(f"MOV #{expr.value}, {reg_dst}")
         elif isinstance(expr, CharLiteral):
             self.emit(f"MOV {ord(expr.value)}, {reg_dst}")
         elif isinstance(expr, BoolLiteral):

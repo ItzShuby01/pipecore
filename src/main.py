@@ -31,7 +31,8 @@ def compile_alg_to_asm(alg_path: str) -> str:
         generated_asm = AlgCodeGen(analyzer).generate(ast)
         return str(generated_asm)
     except Exception as e:
-        print(f"Compiler Error during ALG translation: {e}")
+        msg = str(e) if str(e) else f"{type(e).__name__}"
+        print(f"Compiler Error during ALG translation: {msg}")
         sys.exit(1)
 
 
@@ -99,7 +100,7 @@ def main() -> None:
             bin_file = base_path + ".bin"
             lst_file = base_path + ".lst"
 
-        is_isr = "isr" in os.path.basename(alg_file).lower()
+        is_isr = os.path.basename(alg_file).lower().startswith("isr")
         target_start_address = 0x0100 if is_isr else 0x0040
 
         asm_content = compile_alg_to_asm(alg_file)
