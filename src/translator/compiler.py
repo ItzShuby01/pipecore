@@ -1,7 +1,7 @@
 from __future__ import annotations
 from dataclasses import dataclass
 from src.translator.alg import (
-    ASTNode, Program, VarDecl, ProcedureDecl, InterruptDecl, AssignStmt, IfStmt,
+    Program, VarDecl, ProcedureDecl, InterruptDecl, AssignStmt, IfStmt,
     WhileStmt, ReturnStmt, OutputStmt, InputStmt, ExprStmt, BinOpExpr, IntLiteral,
     CharLiteral, StringLiteral, BoolLiteral, VariableExpr, CallExpr, Expr, Stmt
 )
