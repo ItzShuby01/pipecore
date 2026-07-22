@@ -55,7 +55,10 @@ class Simulator:
                 print(f"\n[Tick {self.cycle_count}]")
 
             p0_busy = (self.cpu.io_ports[IOPort.P2] & 1) != 0
-            if not p0_busy and deferred_inputs:
+            flags = self.cpu.read_register(int(Register.FLAGS))
+            interrupts_enabled = (flags & 0x10) != 0
+
+            if not p0_busy and interrupts_enabled and deferred_inputs:
                 token, input_id = deferred_inputs.pop(0)
                 self.cpu.io_ports[IOPort.P0] = ord(token)
                 self.cpu.io_ports[IOPort.P2] |= 1

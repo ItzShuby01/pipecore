@@ -158,7 +158,7 @@ class Pipeline:
         if self.ex_stage is not None:
             return self.ex_stage["pc"]
         if self.id_stage is not None:
-            return self.ex_stage["pc"] if self.ex_stage else self.id_stage["pc"]
+            return self.id_stage["pc"]
         if self.if_stage is not None:
             return self.if_stage["pc"]
         return self.cpu.read_register(int(Register.IP))
