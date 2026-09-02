@@ -39,28 +39,85 @@ PipeCore is a custom pipelined CPU simulator inspired by CISC, featuring:
 ```
 ## Running Simulations
 
-### Using Make (Recommended)
+### Compile ALG
+
+Compile `.alg` program to `.asm, .bin,` and ,`lst` files:
 
 ```bash
-make run <main_program.asm> <isr_program.asm> mode=[verbose|silent|v|s]
+make compile-alg <program.alg>
 ```
 
+Output files:
 
-### Using Python
+```text
+program.asm
+program.bin
+program.lst
+```
+
+For a custom output path:
 
 ```bash
-python -m src.main <main_program.asm> <isr_program.asm> mode=[verbose|silent|v|s]
+make compile-alg <program.alg> OUT=path/output.bin
 ```
-Optional modes:
+
+For ISR programs, use an `isr*.alg` filename. 
+
+### Run ALG
+
+Compile and run a main ALG program with an ISR. 
+
+`run-alg` compiles the ALG source first, then executes the resulting assembly:
+
+```bash
+make run-alg <program.alg> <isr.alg>
+```
+
+### Run Assembly
+
+Run existing assembly programs:
+
+```bash
+make run-asm <program.asm> <isr.asm>
+```
+
+### Run Binary
+
+Run existing binary programs:
+
+```bash
+make run-bin <program.bin> <isr.bin>
+```
+
+### Simulation Modes
+
+Add `mode=` to select the simulation output:
+
+```bash
+make run-alg main.alg isr.alg mode=verbose
+make run-asm main.asm isr.asm mode=silent
+make run-bin main.bin isr.bin mode=v
+```
+
+Supported modes:
+
+| Mode           | Description                   |
+| -------------- | ----------------------------- |
+| `verbose`, `v` | Detailed pipeline trace       |
+| `silent`, `s`  | Final simulation results only |
+| `default` | Standard simulation report |
+
+Without `mode=`, the `default` trace is displayed.
+
+### Direct Python Usage
 
 
-| Mode | Description | Example (Make) | Example (Python) |
-|------|-------------|----------------|------------------|
-| Default | Standard pipeline simulation | `make run main.asm isr.asm` | `python -m src.main main.asm isr.asm` |
-| Verbose (`verbose` / `v`) | Detailed pipeline trace for every clock cycle (tick) | `make run main.asm isr.asm mode=verbose` | `python -m src.main main.asm isr.asm mode=v` |
-| Silent (`silent` / `s`) | Display only the final simulation results | `make run main.asm isr.asm mode=s` | `python -m src.main main.asm isr.asm mode=silent` |
-
-
+```bash
+python -m src.main compile-alg <program.alg>
+python -m src.main run-alg <program.alg> <isr.alg>
+python -m src.main run-asm <program.asm> <isr.asm>
+python -m src.main run-bin <program.bin> <isr.bin>
+```
 
 ## Status
 
