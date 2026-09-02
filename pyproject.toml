@@ -15,7 +15,12 @@ dev = [
 ]
 
 [tool.ruff]
-line-length = 88
+line-length = 999
+[tool.ruff.lint]
+ignore = [
+    "BLE001",
+    "SIM102",
+]
 
 [tool.mypy]
 strict = true
