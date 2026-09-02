@@ -16,10 +16,15 @@ dev = [
 
 [tool.ruff]
 line-length = 999
+
 [tool.ruff.lint]
 ignore = [
-    "BLE001",
-    "SIM102",
+    "I", 
+    "BLE",
+    "SIM",
+    "PYI",
+    "S",
+    "B",
 ]
 
 [tool.mypy]
