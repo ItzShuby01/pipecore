@@ -22,12 +22,12 @@ def load_input_schedule(file_path: str = "input_schedule.json") -> list[tuple[in
 
     events = data["events"]
     if not isinstance(events, list):
-        raise ValueError(f"The 'events' key in {file_path} must be a list.")
+        raise TypeError(f"The 'events' key in {file_path} must be a list.")
 
     schedule: list[tuple[int, str]] = []
     for index, event in enumerate(events):
         if not isinstance(event, dict):
-            raise ValueError(
+            raise TypeError(
                 f"Event at index {index} is not a valid JSON object.")
         if "tick" not in event or "token" not in event:
             raise ValueError(
@@ -40,7 +40,7 @@ def load_input_schedule(file_path: str = "input_schedule.json") -> list[tuple[in
             raise ValueError(
                 f"Event tick '{tick}' at index {index} must be a non-negative integer.")
         if not isinstance(token, str):
-            raise ValueError(f"Event token at index {index} must be a string.")
+            raise TypeError(f"Event token at index {index} must be a string.")
 
         schedule.append((tick, token))
 

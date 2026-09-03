@@ -1,6 +1,7 @@
 from __future__ import annotations
 import re
 from dataclasses import dataclass, field
+from typing import ClassVar
 
 
 @dataclass(eq=False)
@@ -140,13 +141,13 @@ class Token:
 
 
 class Lexer:
-    KEYWORDS = {
+    KEYWORDS: ClassVar[set[str]] = {
         "var", "procedure", "interrupt", "input", "output",
         "if", "else", "while", "return", "true", "false",
         "int", "char", "string", "boolean"
     }
 
-    TOKEN_SPECIFICATION = [
+    TOKEN_SPECIFICATION: ClassVar[list[tuple[str, str]]] = [
         ("ASSIGN",     r":="),
         ("EQ",         r"=="),
         ("NEQ",        r"!="),
