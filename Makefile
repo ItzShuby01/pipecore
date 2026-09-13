@@ -47,6 +47,6 @@ clean:
 	find . -type d -name ".mypy_cache" -exec rm -rf {} +
 	find . -type d -name ".ruff_cache" -exec rm -rf {} +
 	find . -type f -name "*.pyc" -delete
-	find . -type f -name "*.bin" -delete
-	find . -type f -name "*.lst" -delete
-	find . -type f -name "*.asm" -delete
+	find . -type f -name "*.bin" -not -path "./tests/cases/*" -delete
+	find . -type f -name "*.lst" -not -path "./tests/cases/*" -delete
+	find . -type f -name "*.asm" -not -path "./tests/cases/*" -delete
