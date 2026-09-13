@@ -1,0 +1,1301 @@
+source_file: "tests/cases/01_hello/hello.alg"
+
+max_cycles: 100000
+trace_mode: "verbose"
+
+out_asm: |
+    JMP _start
+    _start:
+    MOV #72, R1
+    OUT P1, R1
+    MOV #101, R1
+    OUT P1, R1
+    MOV #108, R1
+    OUT P1, R1
+    MOV #108, R1
+    OUT P1, R1
+    MOV #111, R1
+    OUT P1, R1
+    MOV #32, R1
+    OUT P1, R1
+    MOV #87, R1
+    OUT P1, R1
+    MOV #111, R1
+    OUT P1, R1
+    MOV #114, R1
+    OUT P1, R1
+    MOV #108, R1
+    OUT P1, R1
+    MOV #100, R1
+    OUT P1, R1
+    MOV #33, R1
+    OUT P1, R1
+    HALT
+
+out_lst: |
+    <address> - <HEXCODE> - <mnemonic>
+    0040      - 31100000  - JMP #0x0048
+    0044      - 00000048
+    0048      - 10201000  - MOV #0x0048, R1
+    004C      - 00000048
+    0050      - 00000001
+    0054      - 51211000  - OUT P1, R1
+    0058      - 00000001
+    005C      - 00000001
+    0060      - 10201000  - MOV #0x0065, R1
+    0064      - 00000065
+    0068      - 00000001
+    006C      - 51211000  - OUT P1, R1
+    0070      - 00000001
+    0074      - 00000001
+    0078      - 10201000  - MOV #0x006C, R1
+    007C      - 0000006C
+    0080      - 00000001
+    0084      - 51211000  - OUT P1, R1
+    0088      - 00000001
+    008C      - 00000001
+    0090      - 10201000  - MOV #0x006C, R1
+    0094      - 0000006C
+    0098      - 00000001
+    009C      - 51211000  - OUT P1, R1
+    00A0      - 00000001
+    00A4      - 00000001
+    00A8      - 10201000  - MOV #0x006F, R1
+    00AC      - 0000006F
+    00B0      - 00000001
+    00B4      - 51211000  - OUT P1, R1
+    00B8      - 00000001
+    00BC      - 00000001
+    00C0      - 10201000  - MOV #0x0020, R1
+    00C4      - 00000020
+    00C8      - 00000001
+    00CC      - 51211000  - OUT P1, R1
+    00D0      - 00000001
+    00D4      - 00000001
+    00D8      - 10201000  - MOV #0x0057, R1
+    00DC      - 00000057
+    00E0      - 00000001
+    00E4      - 51211000  - OUT P1, R1
+    00E8      - 00000001
+    00EC      - 00000001
+    00F0      - 10201000  - MOV #0x006F, R1
+    00F4      - 0000006F
+    00F8      - 00000001
+    00FC      - 51211000  - OUT P1, R1
+    0100      - 00000001
+    0104      - 00000001
+    0108      - 10201000  - MOV #0x0072, R1
+    010C      - 00000072
+    0110      - 00000001
+    0114      - 51211000  - OUT P1, R1
+    0118      - 00000001
+    011C      - 00000001
+    0120      - 10201000  - MOV #0x006C, R1
+    0124      - 0000006C
+    0128      - 00000001
+    012C      - 51211000  - OUT P1, R1
+    0130      - 00000001
+    0134      - 00000001
+    0138      - 10201000  - MOV #0x0064, R1
+    013C      - 00000064
+    0140      - 00000001
+    0144      - 51211000  - OUT P1, R1
+    0148      - 00000001
+    014C      - 00000001
+    0150      - 10201000  - MOV #0x0021, R1
+    0154      - 00000021
+    0158      - 00000001
+    015C      - 51211000  - OUT P1, R1
+    0160      - 00000001
+    0164      - 00000001
+    0168      - 01000000  - HALT
+
+
+out_final_state: |
+    ========================================================
+    Registers Final State:
+        R0   : 0          (0x00000000)
+        R1   : 33         (0x00000021)
+        R2   : 0          (0x00000000)
+        R3   : 0          (0x00000000)
+        IP   : 364        (0x0000016C)
+        SP   : 65535      (0x0000FFFF)
+        IR   : 16777216   (0x01000000)
+        FLAGS: 16         (0x00000010)
+
+    Ports Final State
+    -----------------
+    P0 : empty
+    P1 : 'Hello World!'
+    P2 : INPUT_READY=0
+
+    Output: Hello World!
+    Latency: 30 cycles
+
+
+out_trace: |
+    --- PipeCore Simulation ---
+
+    [Tick 0]
+
+    Pipeline Registers
+    ------------------
+    IF : JMP @0x0040
+    ID : EMPTY
+    EX : EMPTY
+
+    IF
+    --
+    PC       : 0x0040
+    Opcode   : JMP
+    Length   : 2 words
+    Word[0]  : 0x31100000
+    Word[1]  : 0x00000048
+
+    ID
+    --
+    No instruction
+
+    EX
+    --
+    No instruction
+
+    -------------------------------------------------
+
+
+    [Tick 1]
+
+    Pipeline Registers
+    ------------------
+    IF : MOV @0x0048
+    ID : JMP @0x0040
+    EX : EMPTY
+
+    IF
+    --
+    PC       : 0x0048
+    Opcode   : MOV
+    Length   : 3 words
+    Word[0]  : 0x10201000
+    Word[1]  : 0x00000048
+    Word[2]  : 0x00000001
+
+    ID
+    --
+    Instruction   : JMP
+    Opcode        : JMP (0x31)
+    Length        : 2 words
+
+    Operand Decode
+    --------------
+    SRC : Immediate (#72)
+
+    EX
+    --
+    No instruction
+
+    -------------------------------------------------
+
+
+    [Tick 2]
+
+    Pipeline Registers
+    ------------------
+    IF : OUT @0x0054
+    ID : MOV @0x0048
+    EX : JMP @0x0040
+
+    IF
+    --
+    PC       : 0x0054
+    Opcode   : OUT
+    Length   : 3 words
+    Word[0]  : 0x51211000
+    Word[1]  : 0x00000001
+    Word[2]  : 0x00000001
+
+    ID
+    --
+    Instruction   : MOV
+    Opcode        : MOV (0x10)
+    Length        : 3 words
+
+    Operand Decode
+    --------------
+    SRC : Immediate (#72)
+    DST : Register (R1)
+
+    EX
+    --
+    Instruction : JMP
+
+    PC <- 0x0048
+    Flush IF
+    Flush ID
+
+    -------------------------------------------------
+
+
+    [Tick 3]
+
+    Pipeline Registers
+    ------------------
+    IF : MOV @0x0048
+    ID : EMPTY
+    EX : EMPTY
+
+    IF
+    --
+    PC       : 0x0048
+    Opcode   : MOV
+    Length   : 3 words
+    Word[0]  : 0x10201000
+    Word[1]  : 0x00000048
+    Word[2]  : 0x00000001
+
+    ID
+    --
+    No instruction
+
+    EX
+    --
+    No instruction
+
+    -------------------------------------------------
+
+
+    [Tick 4]
+
+    Pipeline Registers
+    ------------------
+    IF : OUT @0x0054
+    ID : MOV @0x0048
+    EX : EMPTY
+
+    IF
+    --
+    PC       : 0x0054
+    Opcode   : OUT
+    Length   : 3 words
+    Word[0]  : 0x51211000
+    Word[1]  : 0x00000001
+    Word[2]  : 0x00000001
+
+    ID
+    --
+    Instruction   : MOV
+    Opcode        : MOV (0x10)
+    Length        : 3 words
+
+    Operand Decode
+    --------------
+    SRC : Immediate (#72)
+    DST : Register (R1)
+
+    EX
+    --
+    No instruction
+
+    -------------------------------------------------
+
+
+    [Tick 5]
+
+    Pipeline Registers
+    ------------------
+    IF : MOV @0x0060
+    ID : OUT @0x0054
+    EX : MOV @0x0048
+
+    IF
+    --
+    PC       : 0x0060
+    Opcode   : MOV
+    Length   : 3 words
+    Word[0]  : 0x10201000
+    Word[1]  : 0x00000065
+    Word[2]  : 0x00000001
+
+    ID
+    --
+    Instruction   : OUT
+    Opcode        : OUT (0x51)
+    Length        : 3 words
+
+    Operands
+    --------
+    Port : P1
+    Source : R1
+
+    EX
+    --
+    Instruction : MOV
+
+    Source      : Immediate
+    Destination : R1
+    R1 <- 72
+
+    -------------------------------------------------
+
+
+    [Tick 6]
+
+    Pipeline Registers
+    ------------------
+    IF : OUT @0x006C
+    ID : MOV @0x0060
+    EX : OUT @0x0054
+
+    IF
+    --
+    PC       : 0x006C
+    Opcode   : OUT
+    Length   : 3 words
+    Word[0]  : 0x51211000
+    Word[1]  : 0x00000001
+    Word[2]  : 0x00000001
+
+    ID
+    --
+    Instruction   : MOV
+    Opcode        : MOV (0x10)
+    Length        : 3 words
+
+    Operand Decode
+    --------------
+    SRC : Immediate (#101)
+    DST : Register (R1)
+
+    EX
+    --
+    Instruction : OUT
+    Port        : P1
+    Source      : R1
+
+    P1 <- R1 ('H')
+
+    Output Buffer
+    -------------
+    H
+
+    -------------------------------------------------
+
+
+    [Tick 7]
+
+    Pipeline Registers
+    ------------------
+    IF : MOV @0x0078
+    ID : OUT @0x006C
+    EX : MOV @0x0060
+
+    IF
+    --
+    PC       : 0x0078
+    Opcode   : MOV
+    Length   : 3 words
+    Word[0]  : 0x10201000
+    Word[1]  : 0x0000006C
+    Word[2]  : 0x00000001
+
+    ID
+    --
+    Instruction   : OUT
+    Opcode        : OUT (0x51)
+    Length        : 3 words
+
+    Operands
+    --------
+    Port : P1
+    Source : R1
+
+    EX
+    --
+    Instruction : MOV
+
+    Source      : Immediate
+    Destination : R1
+    R1 <- 101
+
+    -------------------------------------------------
+
+
+    [Tick 8]
+
+    Pipeline Registers
+    ------------------
+    IF : OUT @0x0084
+    ID : MOV @0x0078
+    EX : OUT @0x006C
+
+    IF
+    --
+    PC       : 0x0084
+    Opcode   : OUT
+    Length   : 3 words
+    Word[0]  : 0x51211000
+    Word[1]  : 0x00000001
+    Word[2]  : 0x00000001
+
+    ID
+    --
+    Instruction   : MOV
+    Opcode        : MOV (0x10)
+    Length        : 3 words
+
+    Operand Decode
+    --------------
+    SRC : Immediate (#108)
+    DST : Register (R1)
+
+    EX
+    --
+    Instruction : OUT
+    Port        : P1
+    Source      : R1
+
+    P1 <- R1 ('e')
+
+    Output Buffer
+    -------------
+    He
+
+    -------------------------------------------------
+
+
+    [Tick 9]
+
+    Pipeline Registers
+    ------------------
+    IF : MOV @0x0090
+    ID : OUT @0x0084
+    EX : MOV @0x0078
+
+    IF
+    --
+    PC       : 0x0090
+    Opcode   : MOV
+    Length   : 3 words
+    Word[0]  : 0x10201000
+    Word[1]  : 0x0000006C
+    Word[2]  : 0x00000001
+
+    ID
+    --
+    Instruction   : OUT
+    Opcode        : OUT (0x51)
+    Length        : 3 words
+
+    Operands
+    --------
+    Port : P1
+    Source : R1
+
+    EX
+    --
+    Instruction : MOV
+
+    Source      : Immediate
+    Destination : R1
+    R1 <- 108
+
+    -------------------------------------------------
+
+
+    [Tick 10]
+
+    Pipeline Registers
+    ------------------
+    IF : OUT @0x009C
+    ID : MOV @0x0090
+    EX : OUT @0x0084
+
+    IF
+    --
+    PC       : 0x009C
+    Opcode   : OUT
+    Length   : 3 words
+    Word[0]  : 0x51211000
+    Word[1]  : 0x00000001
+    Word[2]  : 0x00000001
+
+    ID
+    --
+    Instruction   : MOV
+    Opcode        : MOV (0x10)
+    Length        : 3 words
+
+    Operand Decode
+    --------------
+    SRC : Immediate (#108)
+    DST : Register (R1)
+
+    EX
+    --
+    Instruction : OUT
+    Port        : P1
+    Source      : R1
+
+    P1 <- R1 ('l')
+
+    Output Buffer
+    -------------
+    Hel
+
+    -------------------------------------------------
+
+
+    [Tick 11]
+
+    Pipeline Registers
+    ------------------
+    IF : MOV @0x00A8
+    ID : OUT @0x009C
+    EX : MOV @0x0090
+
+    IF
+    --
+    PC       : 0x00A8
+    Opcode   : MOV
+    Length   : 3 words
+    Word[0]  : 0x10201000
+    Word[1]  : 0x0000006F
+    Word[2]  : 0x00000001
+
+    ID
+    --
+    Instruction   : OUT
+    Opcode        : OUT (0x51)
+    Length        : 3 words
+
+    Operands
+    --------
+    Port : P1
+    Source : R1
+
+    EX
+    --
+    Instruction : MOV
+
+    Source      : Immediate
+    Destination : R1
+    R1 <- 108
+
+    -------------------------------------------------
+
+
+    [Tick 12]
+
+    Pipeline Registers
+    ------------------
+    IF : OUT @0x00B4
+    ID : MOV @0x00A8
+    EX : OUT @0x009C
+
+    IF
+    --
+    PC       : 0x00B4
+    Opcode   : OUT
+    Length   : 3 words
+    Word[0]  : 0x51211000
+    Word[1]  : 0x00000001
+    Word[2]  : 0x00000001
+
+    ID
+    --
+    Instruction   : MOV
+    Opcode        : MOV (0x10)
+    Length        : 3 words
+
+    Operand Decode
+    --------------
+    SRC : Immediate (#111)
+    DST : Register (R1)
+
+    EX
+    --
+    Instruction : OUT
+    Port        : P1
+    Source      : R1
+
+    P1 <- R1 ('l')
+
+    Output Buffer
+    -------------
+    Hell
+
+    -------------------------------------------------
+
+
+    [Tick 13]
+
+    Pipeline Registers
+    ------------------
+    IF : MOV @0x00C0
+    ID : OUT @0x00B4
+    EX : MOV @0x00A8
+
+    IF
+    --
+    PC       : 0x00C0
+    Opcode   : MOV
+    Length   : 3 words
+    Word[0]  : 0x10201000
+    Word[1]  : 0x00000020
+    Word[2]  : 0x00000001
+
+    ID
+    --
+    Instruction   : OUT
+    Opcode        : OUT (0x51)
+    Length        : 3 words
+
+    Operands
+    --------
+    Port : P1
+    Source : R1
+
+    EX
+    --
+    Instruction : MOV
+
+    Source      : Immediate
+    Destination : R1
+    R1 <- 111
+
+    -------------------------------------------------
+
+
+    [Tick 14]
+
+    Pipeline Registers
+    ------------------
+    IF : OUT @0x00CC
+    ID : MOV @0x00C0
+    EX : OUT @0x00B4
+
+    IF
+    --
+    PC       : 0x00CC
+    Opcode   : OUT
+    Length   : 3 words
+    Word[0]  : 0x51211000
+    Word[1]  : 0x00000001
+    Word[2]  : 0x00000001
+
+    ID
+    --
+    Instruction   : MOV
+    Opcode        : MOV (0x10)
+    Length        : 3 words
+
+    Operand Decode
+    --------------
+    SRC : Immediate (#32)
+    DST : Register (R1)
+
+    EX
+    --
+    Instruction : OUT
+    Port        : P1
+    Source      : R1
+
+    P1 <- R1 ('o')
+
+    Output Buffer
+    -------------
+    Hello
+
+    -------------------------------------------------
+
+
+    [Tick 15]
+
+    Pipeline Registers
+    ------------------
+    IF : MOV @0x00D8
+    ID : OUT @0x00CC
+    EX : MOV @0x00C0
+
+    IF
+    --
+    PC       : 0x00D8
+    Opcode   : MOV
+    Length   : 3 words
+    Word[0]  : 0x10201000
+    Word[1]  : 0x00000057
+    Word[2]  : 0x00000001
+
+    ID
+    --
+    Instruction   : OUT
+    Opcode        : OUT (0x51)
+    Length        : 3 words
+
+    Operands
+    --------
+    Port : P1
+    Source : R1
+
+    EX
+    --
+    Instruction : MOV
+
+    Source      : Immediate
+    Destination : R1
+    R1 <- 32
+
+    -------------------------------------------------
+
+
+    [Tick 16]
+
+    Pipeline Registers
+    ------------------
+    IF : OUT @0x00E4
+    ID : MOV @0x00D8
+    EX : OUT @0x00CC
+
+    IF
+    --
+    PC       : 0x00E4
+    Opcode   : OUT
+    Length   : 3 words
+    Word[0]  : 0x51211000
+    Word[1]  : 0x00000001
+    Word[2]  : 0x00000001
+
+    ID
+    --
+    Instruction   : MOV
+    Opcode        : MOV (0x10)
+    Length        : 3 words
+
+    Operand Decode
+    --------------
+    SRC : Immediate (#87)
+    DST : Register (R1)
+
+    EX
+    --
+    Instruction : OUT
+    Port        : P1
+    Source      : R1
+
+    P1 <- R1 (' ')
+
+    Output Buffer
+    -------------
+    Hello
+
+    -------------------------------------------------
+
+
+    [Tick 17]
+
+    Pipeline Registers
+    ------------------
+    IF : MOV @0x00F0
+    ID : OUT @0x00E4
+    EX : MOV @0x00D8
+
+    IF
+    --
+    PC       : 0x00F0
+    Opcode   : MOV
+    Length   : 3 words
+    Word[0]  : 0x10201000
+    Word[1]  : 0x0000006F
+    Word[2]  : 0x00000001
+
+    ID
+    --
+    Instruction   : OUT
+    Opcode        : OUT (0x51)
+    Length        : 3 words
+
+    Operands
+    --------
+    Port : P1
+    Source : R1
+
+    EX
+    --
+    Instruction : MOV
+
+    Source      : Immediate
+    Destination : R1
+    R1 <- 87
+
+    -------------------------------------------------
+
+
+    [Tick 18]
+
+    Pipeline Registers
+    ------------------
+    IF : OUT @0x00FC
+    ID : MOV @0x00F0
+    EX : OUT @0x00E4
+
+    IF
+    --
+    PC       : 0x00FC
+    Opcode   : OUT
+    Length   : 3 words
+    Word[0]  : 0x51211000
+    Word[1]  : 0x00000001
+    Word[2]  : 0x00000001
+
+    ID
+    --
+    Instruction   : MOV
+    Opcode        : MOV (0x10)
+    Length        : 3 words
+
+    Operand Decode
+    --------------
+    SRC : Immediate (#111)
+    DST : Register (R1)
+
+    EX
+    --
+    Instruction : OUT
+    Port        : P1
+    Source      : R1
+
+    P1 <- R1 ('W')
+
+    Output Buffer
+    -------------
+    Hello W
+
+    -------------------------------------------------
+
+
+    [Tick 19]
+
+    Pipeline Registers
+    ------------------
+    IF : MOV @0x0108
+    ID : OUT @0x00FC
+    EX : MOV @0x00F0
+
+    IF
+    --
+    PC       : 0x0108
+    Opcode   : MOV
+    Length   : 3 words
+    Word[0]  : 0x10201000
+    Word[1]  : 0x00000072
+    Word[2]  : 0x00000001
+
+    ID
+    --
+    Instruction   : OUT
+    Opcode        : OUT (0x51)
+    Length        : 3 words
+
+    Operands
+    --------
+    Port : P1
+    Source : R1
+
+    EX
+    --
+    Instruction : MOV
+
+    Source      : Immediate
+    Destination : R1
+    R1 <- 111
+
+    -------------------------------------------------
+
+
+    [Tick 20]
+
+    Pipeline Registers
+    ------------------
+    IF : OUT @0x0114
+    ID : MOV @0x0108
+    EX : OUT @0x00FC
+
+    IF
+    --
+    PC       : 0x0114
+    Opcode   : OUT
+    Length   : 3 words
+    Word[0]  : 0x51211000
+    Word[1]  : 0x00000001
+    Word[2]  : 0x00000001
+
+    ID
+    --
+    Instruction   : MOV
+    Opcode        : MOV (0x10)
+    Length        : 3 words
+
+    Operand Decode
+    --------------
+    SRC : Immediate (#114)
+    DST : Register (R1)
+
+    EX
+    --
+    Instruction : OUT
+    Port        : P1
+    Source      : R1
+
+    P1 <- R1 ('o')
+
+    Output Buffer
+    -------------
+    Hello Wo
+
+    -------------------------------------------------
+
+
+    [Tick 21]
+
+    Pipeline Registers
+    ------------------
+    IF : MOV @0x0120
+    ID : OUT @0x0114
+    EX : MOV @0x0108
+
+    IF
+    --
+    PC       : 0x0120
+    Opcode   : MOV
+    Length   : 3 words
+    Word[0]  : 0x10201000
+    Word[1]  : 0x0000006C
+    Word[2]  : 0x00000001
+
+    ID
+    --
+    Instruction   : OUT
+    Opcode        : OUT (0x51)
+    Length        : 3 words
+
+    Operands
+    --------
+    Port : P1
+    Source : R1
+
+    EX
+    --
+    Instruction : MOV
+
+    Source      : Immediate
+    Destination : R1
+    R1 <- 114
+
+    -------------------------------------------------
+
+
+    [Tick 22]
+
+    Pipeline Registers
+    ------------------
+    IF : OUT @0x012C
+    ID : MOV @0x0120
+    EX : OUT @0x0114
+
+    IF
+    --
+    PC       : 0x012C
+    Opcode   : OUT
+    Length   : 3 words
+    Word[0]  : 0x51211000
+    Word[1]  : 0x00000001
+    Word[2]  : 0x00000001
+
+    ID
+    --
+    Instruction   : MOV
+    Opcode        : MOV (0x10)
+    Length        : 3 words
+
+    Operand Decode
+    --------------
+    SRC : Immediate (#108)
+    DST : Register (R1)
+
+    EX
+    --
+    Instruction : OUT
+    Port        : P1
+    Source      : R1
+
+    P1 <- R1 ('r')
+
+    Output Buffer
+    -------------
+    Hello Wor
+
+    -------------------------------------------------
+
+
+    [Tick 23]
+
+    Pipeline Registers
+    ------------------
+    IF : MOV @0x0138
+    ID : OUT @0x012C
+    EX : MOV @0x0120
+
+    IF
+    --
+    PC       : 0x0138
+    Opcode   : MOV
+    Length   : 3 words
+    Word[0]  : 0x10201000
+    Word[1]  : 0x00000064
+    Word[2]  : 0x00000001
+
+    ID
+    --
+    Instruction   : OUT
+    Opcode        : OUT (0x51)
+    Length        : 3 words
+
+    Operands
+    --------
+    Port : P1
+    Source : R1
+
+    EX
+    --
+    Instruction : MOV
+
+    Source      : Immediate
+    Destination : R1
+    R1 <- 108
+
+    -------------------------------------------------
+
+
+    [Tick 24]
+
+    Pipeline Registers
+    ------------------
+    IF : OUT @0x0144
+    ID : MOV @0x0138
+    EX : OUT @0x012C
+
+    IF
+    --
+    PC       : 0x0144
+    Opcode   : OUT
+    Length   : 3 words
+    Word[0]  : 0x51211000
+    Word[1]  : 0x00000001
+    Word[2]  : 0x00000001
+
+    ID
+    --
+    Instruction   : MOV
+    Opcode        : MOV (0x10)
+    Length        : 3 words
+
+    Operand Decode
+    --------------
+    SRC : Immediate (#100)
+    DST : Register (R1)
+
+    EX
+    --
+    Instruction : OUT
+    Port        : P1
+    Source      : R1
+
+    P1 <- R1 ('l')
+
+    Output Buffer
+    -------------
+    Hello Worl
+
+    -------------------------------------------------
+
+
+    [Tick 25]
+
+    Pipeline Registers
+    ------------------
+    IF : MOV @0x0150
+    ID : OUT @0x0144
+    EX : MOV @0x0138
+
+    IF
+    --
+    PC       : 0x0150
+    Opcode   : MOV
+    Length   : 3 words
+    Word[0]  : 0x10201000
+    Word[1]  : 0x00000021
+    Word[2]  : 0x00000001
+
+    ID
+    --
+    Instruction   : OUT
+    Opcode        : OUT (0x51)
+    Length        : 3 words
+
+    Operands
+    --------
+    Port : P1
+    Source : R1
+
+    EX
+    --
+    Instruction : MOV
+
+    Source      : Immediate
+    Destination : R1
+    R1 <- 100
+
+    -------------------------------------------------
+
+
+    [Tick 26]
+
+    Pipeline Registers
+    ------------------
+    IF : OUT @0x015C
+    ID : MOV @0x0150
+    EX : OUT @0x0144
+
+    IF
+    --
+    PC       : 0x015C
+    Opcode   : OUT
+    Length   : 3 words
+    Word[0]  : 0x51211000
+    Word[1]  : 0x00000001
+    Word[2]  : 0x00000001
+
+    ID
+    --
+    Instruction   : MOV
+    Opcode        : MOV (0x10)
+    Length        : 3 words
+
+    Operand Decode
+    --------------
+    SRC : Immediate (#33)
+    DST : Register (R1)
+
+    EX
+    --
+    Instruction : OUT
+    Port        : P1
+    Source      : R1
+
+    P1 <- R1 ('d')
+
+    Output Buffer
+    -------------
+    Hello World
+
+    -------------------------------------------------
+
+
+    [Tick 27]
+
+    Pipeline Registers
+    ------------------
+    IF : HALT @0x0168
+    ID : OUT @0x015C
+    EX : MOV @0x0150
+
+    IF
+    --
+    PC       : 0x0168
+    Opcode   : HALT
+    Length   : 1 word
+    Word[0]  : 0x01000000
+
+    ID
+    --
+    Instruction   : OUT
+    Opcode        : OUT (0x51)
+    Length        : 3 words
+
+    Operands
+    --------
+    Port : P1
+    Source : R1
+
+    EX
+    --
+    Instruction : MOV
+
+    Source      : Immediate
+    Destination : R1
+    R1 <- 33
+
+    -------------------------------------------------
+
+
+    [Tick 28]
+
+    Pipeline Registers
+    ------------------
+    IF : EMPTY
+    ID : HALT @0x0168
+    EX : OUT @0x015C
+
+    IF
+    --
+    No instruction
+
+    ID
+    --
+    Instruction   : HALT
+    Opcode        : HALT (0x01)
+    Length        : 1 words
+
+    Operand Decode
+    --------------
+    None
+
+    EX
+    --
+    Instruction : OUT
+    Port        : P1
+    Source      : R1
+
+    P1 <- R1 ('!')
+
+    Output Buffer
+    -------------
+    Hello World!
+
+    -------------------------------------------------
+
+
+    [Tick 29]
+
+    Pipeline Registers
+    ------------------
+    IF : EMPTY
+    ID : EMPTY
+    EX : HALT @0x0168
+
+    IF
+    --
+    No instruction
+
+    ID
+    --
+    No instruction
+
+    EX
+    --
+    Instruction : HALT
+
+    HALT asserted
+    Pipeline draining
+
+    -------------------------------------------------

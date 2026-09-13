@@ -23,15 +23,18 @@ class Simulator:
     def initialize_environment(self, main_source: str, isr_source: str, input_schedule: list[tuple[int, str]] | None = None,
                                main_bin: str | None = None, main_lst: str | None = None,
                                isr_bin: str | None = None, isr_lst: str | None = None) -> None:
-        self.cpu.memory.write(0x0000, 0x0100)
+        isr_start_address = 0x0400
+
+        # Set IVT entry at 0x0000 to point to 0x0400
+        self.cpu.memory.write(0x0000, isr_start_address)
 
         main_bin_data = self.translator.assemble(
             main_source, start_address=0x0040, bin_path=main_bin, lst_path=main_lst)
         Loader.load(self.cpu, main_bin_data, start_address=0x0040)
 
         isr_bin_data = self.translator.assemble(
-            isr_source, start_address=0x0100, bin_path=isr_bin, lst_path=isr_lst)
-        Loader.load(self.cpu, isr_bin_data, start_address=0x0100)
+            isr_source, start_address=isr_start_address, bin_path=isr_bin, lst_path=isr_lst)
+        Loader.load(self.cpu, isr_bin_data, start_address=isr_start_address)
 
         self.pipeline = Pipeline(self.cpu)
 
@@ -45,9 +48,9 @@ class Simulator:
         is_verbose = "verbose" in sys.argv or "v" in sys.argv
 
         if not is_silent:
-            print("\n--- PipeCore Pipeline Simulation ---")
+            print("\n--- PipeCore Simulation ---")
 
-        max_cycles = 30
+        max_cycles = 100_000
         deferred_inputs: list[tuple[str, int]] = []
 
         while (self.cpu.running or not self.pipeline.is_empty()) and self.cycle_count < max_cycles:
@@ -125,6 +128,12 @@ class Simulator:
                 self.cpu.trap_request = False
 
             self.cycle_count += 1
+        if self.cycle_count >= max_cycles and (
+            self.cpu.running or not self.pipeline.is_empty()
+        ):
+            raise RuntimeError(
+                f"Simulation exceeded maximum cycle limit ({max_cycles})"
+            )
 
     def print_report(self) -> None:
         if hasattr(sys.stdout, 'silent_global_mute'):
@@ -149,6 +158,5 @@ class Simulator:
         print(f"P1 : {p1_val}")
         print("P2 : INPUT_READY=0")
 
-        print(f"\nAccumulated Output Buffer: {accumulated_output}")
-        print(f"Total Simulation Clocks (Latency): {self.cycle_count} cycles")
-        print("PipeCore simulation terminated successfully.")
+        print(f"\nOutput: {accumulated_output}")
+        print(f"Latency: {self.cycle_count} cycles")

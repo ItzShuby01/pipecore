@@ -54,8 +54,9 @@ class SemanticAnalyzer:
     def analyze(self, program: Program) -> None:
         for decl in program.decls:
             if isinstance(decl, ProcedureDecl):
+                ret_t = decl.return_type.name if decl.return_type else "void"
                 self.global_table.define(SymbolRecord(
-                    decl.name, "procedure", is_global=True))
+                    decl.name, ret_t, is_global=True))
 
         for decl in program.decls:
             if isinstance(decl, VarDecl):
@@ -70,7 +71,7 @@ class SemanticAnalyzer:
     def analyze_global_var(self, decl: VarDecl) -> None:
         if self.global_table.lookup(decl.name):
             raise SyntaxError(
-                f"Line {decl.line}: Duplicate global structural variable definition '{decl.name}'")
+                f"Line {decl.line}: Duplicate global variable definition '{decl.name}'")
 
         size = 1
         if decl.var_type.name == "string":
@@ -95,7 +96,7 @@ class SemanticAnalyzer:
         self.current_table = local_table
         self.scopes[id(decl)] = local_table
 
-        offset = 12
+        offset = 8
         for param in decl.params:
             record = SymbolRecord(
                 param.name, param.param_type.name, is_global=False, stack_offset=offset)
@@ -141,11 +142,11 @@ class SemanticAnalyzer:
             sym = self.current_table.lookup(stmt.name)
             if not sym:
                 raise SyntaxError(
-                    f"Line {stmt.line}: Unresolved variable modifier execution target '{stmt.name}'")
+                    f"Line {stmt.line}: Unresolved variable modifier target '{stmt.name}'")
             expr_type = self.check_expr_type(stmt.expr)
-            if sym.type_name != expr_type:
+            if sym.type_name != expr_type and not (sym.type_name == "int" and expr_type == "char"):
                 raise SyntaxError(
-                    f"Line {stmt.line}: Cannot assign expression of type '{expr_type}' to target variable of type '{sym.type_name}'")
+                    f"Line {stmt.line}: Cannot assign type '{expr_type}' to target variable of type '{sym.type_name}'")
 
         elif isinstance(stmt, InputStmt):
             if not self.in_interrupt_context:
@@ -154,10 +155,10 @@ class SemanticAnalyzer:
             sym = self.current_table.lookup(stmt.name)
             if not sym:
                 raise SyntaxError(
-                    f"Line {stmt.line}: Unresolved reference target variable for input stream execution logic '{stmt.name}'")
+                    f"Line {stmt.line}: Unresolved reference target variable for input stream logic '{stmt.name}'")
             if sym.type_name not in {"int", "char"}:
                 raise SyntaxError(
-                    f"Line {stmt.line}: System hardware target container target must resolve to int or char scalar variants.")
+                    f"Line {stmt.line}: Target container must resolve to int or char scalar variants.")
 
         elif isinstance(stmt, OutputStmt):
             self.check_expr_type(stmt.expr)
@@ -168,7 +169,7 @@ class SemanticAnalyzer:
         elif isinstance(stmt, IfStmt):
             if self.check_expr_type(stmt.condition) != "boolean":
                 raise SyntaxError(
-                    f"Line {stmt.line}: Statement evaluation context condition must be boolean.")
+                    f"Line {stmt.line}: If condition expression must evaluate to boolean.")
             for s in stmt.then_branch:
                 self.analyze_stmt(s)
             for s in stmt.else_branch:
@@ -177,18 +178,18 @@ class SemanticAnalyzer:
         elif isinstance(stmt, WhileStmt):
             if self.check_expr_type(stmt.condition) != "boolean":
                 raise SyntaxError(
-                    f"Line {stmt.line}: While structural validation condition expression context must evaluate to boolean.")
+                    f"Line {stmt.line}: While condition expression must evaluate to boolean.")
             for s in stmt.body:
                 self.analyze_stmt(s)
 
         elif isinstance(stmt, ReturnStmt):
             actual_type = self.check_expr_type(
-                stmt.expr) if stmt.expr else None
+                stmt.expr) if stmt.expr else "void"
             expected_type = self.current_procedure.return_type.name if (
-                self.current_procedure and self.current_procedure.return_type) else None
+                self.current_procedure and self.current_procedure.return_type) else "void"
             if actual_type != expected_type:
                 raise SyntaxError(
-                    f"Line {stmt.line}: Procedure return expression type mismatch. Expected '{expected_type}', got '{actual_type}'")
+                    f"Line {stmt.line}: Return type mismatch. Expected '{expected_type}', got '{actual_type}'")
 
     def check_expr_type(self, expr: Expr) -> str:
         if isinstance(expr, IntLiteral):
@@ -205,20 +206,20 @@ class SemanticAnalyzer:
             sym = self.current_table.lookup(expr.name)
             if not sym:
                 raise SyntaxError(
-                    f"Line {expr.line}: Unresolved runtime variable invocation reference lookup '{expr.name}'")
+                    f"Line {expr.line}: Unresolved variable reference '{expr.name}'")
             return sym.type_name
         elif isinstance(expr, BinOpExpr):
             lt = self.check_expr_type(expr.left)
             rt = self.check_expr_type(expr.right)
             if expr.op in {"+", "-", "*", "/", "%"}:
-                if lt != "int" or rt != "int":
+                if (lt not in {"int", "char"}) or (rt not in {"int", "char"}):
                     raise SyntaxError(
-                        f"Line {expr.line}: Arithmetic parameters require structural integer operations.")
+                        f"Line {expr.line}: Arithmetic parameters require numeric operands.")
                 return "int"
             else:
                 if lt != rt:
                     raise SyntaxError(
-                        f"Line {expr.line}: Comparators demand uniform operational type validation sets.")
+                        f"Line {expr.line}: Comparison requires uniform operand types.")
                 return "boolean"
         elif isinstance(expr, CallExpr):
             if expr.name == "input":
@@ -226,10 +227,13 @@ class SemanticAnalyzer:
                     raise SyntaxError(
                         f"Line {expr.line}: input() may only be used inside an input interrupt handler")
                 return "int"
-            if not self.global_table.lookup(expr.name):
+            sym = self.global_table.lookup(expr.name)
+            if not sym:
                 raise SyntaxError(
-                    f"Line {expr.line}: Unresolved functional routing target context location '{expr.name}'")
-            return "int"
+                    f"Line {expr.line}: Unresolved function call target '{expr.name}'")
+            for arg in expr.args:
+                self.check_expr_type(arg)
+            return sym.type_name
         return "void"
 
 
@@ -249,7 +253,6 @@ class CodeGenerator:
     def generate(self, program: Program) -> str:
         has_interrupt = any(isinstance(d, InterruptDecl)
                             for d in program.decls)
-
         has_procedures = any(isinstance(d, ProcedureDecl)
                              for d in program.decls)
         has_global_vars = any(isinstance(d, VarDecl) for d in program.decls)
@@ -280,10 +283,10 @@ class CodeGenerator:
         self.emit("_start:")
 
         for addr, val in self.analyzer.string_literals:
-            self.emit(f"MOV {len(val)}, R0")
+            self.emit(f"MOV #{len(val)}, R0")
             self.emit(f"STORE R0, [{addr}]")
             for i, ch in enumerate(val):
-                self.emit(f"MOV {ord(ch)}, R0")
+                self.emit(f"MOV #{ord(ch)}, R0")
                 self.emit(f"STORE R0, [{addr + 4 + (i * 4)}]")
 
         for decl in program.decls:
@@ -313,7 +316,7 @@ class CodeGenerator:
                          if r.stack_offset is not None and r.stack_offset < 0]
         if local_records:
             space = len(local_records) * 4
-            self.emit(f"SUB SP, {space}, SP")
+            self.emit(f"SUB SP, #{space}, SP")
 
         for stmt in decl.body:
             self.generate_stmt(stmt)
@@ -383,7 +386,7 @@ class CodeGenerator:
             label_end = self.generate_label("if_end")
 
             self.generate_expr(stmt.condition, "R1")
-            self.emit("CMP R1, 0")
+            self.emit("CMP R1, #0")
             self.emit(f"JZ {label_false}")
 
             for s in stmt.then_branch:
@@ -402,7 +405,7 @@ class CodeGenerator:
 
             self.emit(f"{label_start}:")
             self.generate_expr(stmt.condition, "R1")
-            self.emit("CMP R1, 0")
+            self.emit("CMP R1, #0")
             self.emit(f"JZ {label_end}")
 
             for s in stmt.body:
@@ -414,17 +417,17 @@ class CodeGenerator:
         if isinstance(expr, IntLiteral):
             self.emit(f"MOV #{expr.value}, {reg_dst}")
         elif isinstance(expr, CharLiteral):
-            self.emit(f"MOV {ord(expr.value)}, {reg_dst}")
+            self.emit(f"MOV #{ord(expr.value)}, {reg_dst}")
         elif isinstance(expr, BoolLiteral):
             val = 1 if expr.value else 0
-            self.emit(f"MOV {val}, {reg_dst}")
+            self.emit(f"MOV #{val}, {reg_dst}")
         elif isinstance(expr, StringLiteral):
             found_addr = None
             for lit_addr, lit_val in self.analyzer.string_literals:
                 if lit_val == expr.value:
                     found_addr = lit_addr
                     break
-            self.emit(f"MOV {found_addr}, {reg_dst}")
+            self.emit(f"MOV #{found_addr}, {reg_dst}")
         elif isinstance(expr, VariableExpr):
             sym = self.analyzer.current_table.lookup(expr.name)
             assert sym is not None
@@ -432,8 +435,19 @@ class CodeGenerator:
                 self.emit(f"LOAD [{sym.address}], {reg_dst}")
             else:
                 self.emit(f"LOAD [R2 + {sym.stack_offset}], {reg_dst}")
-        elif isinstance(expr, CallExpr) and expr.name == "input":
-            self.emit(f"IN P0, {reg_dst}")
+        elif isinstance(expr, CallExpr):
+            if expr.name == "input":
+                self.emit(f"IN P0, {reg_dst}")
+            else:
+                for arg in reversed(expr.args):
+                    self.generate_expr(arg, "R0")
+                    self.emit("PUSH R0")
+                self.emit(f"CALL {expr.name}")
+                if expr.args:
+                    bytes_to_pop = len(expr.args) * 4
+                    self.emit(f"ADD SP, #{bytes_to_pop}, SP")
+                if reg_dst != "R1":
+                    self.emit(f"MOV R1, {reg_dst}")
         elif isinstance(expr, BinOpExpr):
             self.generate_expr(expr.left, "R0")
             self.emit("PUSH R0")
@@ -470,8 +484,8 @@ class CodeGenerator:
                     self.emit(f"JGT {lbl_true}")
                     self.emit(f"JZ {lbl_true}")
 
-                self.emit(f"MOV 0, {reg_dst}")
+                self.emit(f"MOV #0, {reg_dst}")
                 self.emit(f"JMP {lbl_end}")
                 self.emit(f"{lbl_true}:")
-                self.emit(f"MOV 1, {reg_dst}")
+                self.emit(f"MOV #1, {reg_dst}")
                 self.emit(f"{lbl_end}:")

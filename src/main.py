@@ -101,7 +101,7 @@ def main() -> None:
             lst_file = base_path + ".lst"
 
         is_isr = os.path.basename(alg_file).lower().startswith("isr")
-        target_start_address = 0x0100 if is_isr else 0x0040
+        target_start_address = 0x0400 if is_isr else 0x0040
 
         asm_content = compile_alg_to_asm(alg_file)
         with open(asm_file, "w") as f:
@@ -155,7 +155,7 @@ def main() -> None:
             sys.exit(1)
 
         sim = Simulator()
-        sim.cpu.memory.write(0x0000, 0x0100)
+        sim.cpu.memory.write(0x0000, 0x0400)
 
         def read_words(path: str) -> list[int]:
             w = []
@@ -167,7 +167,7 @@ def main() -> None:
             return w
 
         Loader.load(sim.cpu, read_words(p_bin), start_address=0x0040)
-        Loader.load(sim.cpu, read_words(i_bin), start_address=0x0100)
+        Loader.load(sim.cpu, read_words(i_bin), start_address=0x0400)
 
         from src.cpu.pipeline import Pipeline
         sim.pipeline = Pipeline(sim.cpu)

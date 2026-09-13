@@ -1,12 +1,3 @@
 {
-    "events": [
-        {
-            "tick": 2,
-            "token": "H"
-        },
-        {
-            "tick": 3,
-            "token": "i"
-        }
-    ]
+    "events": []
 }

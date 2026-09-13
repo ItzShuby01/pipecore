@@ -322,7 +322,6 @@ class Parser:
             self.consume("LPAREN")
             cond = self.parse_expr()
             self.consume("RPAREN")
-
             then_branch = self.parse_block()
             else_branch = []
             if self.match("ELSE"):
@@ -345,7 +344,6 @@ class Parser:
         elif tok.type == "ID" and self.pos + 1 < len(self.tokens) and self.tokens[self.pos + 1].type == "ASSIGN":
             name = tok.value
             self.pos += 2
-
             if self.current_token().type == "INPUT":
                 self.pos += 1
                 self.consume("LPAREN")
@@ -452,4 +450,4 @@ class Parser:
             return expr
         else:
             raise SyntaxError(
-                f"Line {tok.line}: Expected target secondary expression token tier, got '{tok.value}'")
+                f"Line {tok.line}: Unexpected token '{tok.value}'")
