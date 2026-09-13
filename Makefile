@@ -49,3 +49,4 @@ clean:
 	find . -type f -name "*.pyc" -delete
 	find . -type f -name "*.bin" -delete
 	find . -type f -name "*.lst" -delete
+	find . -type f -name "*.asm" -delete
