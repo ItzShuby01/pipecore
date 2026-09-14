@@ -1,12 +1,1 @@
-output('H');
-output('e');
-output('l');
-output('l');
-output('o');
-output(' ');
-output('W');
-output('o');
-output('r');
-output('l');
-output('d');
-output('!');
+output("Hello World!");
