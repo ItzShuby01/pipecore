@@ -329,7 +329,11 @@ output(value)
 
 `input()` reads a token from input port `P0`.
 
-`output(value)` writes one character to output port `P1`. Each output operation appends one character to the simulator's output buffer.
+`output(value)` writes one character to output port `P1`. 
+- `output(char)` or `output(int)`: outputs one character to `P1`
+- `output(string)`: outputs all characters of the string to `P1` in order 
+
+Regardless of whether `value` is a single `char` or a `string`, the output is sent through `P1` one character at a time. Each output operation appends one character to the simulator's output buffer.
 
 The final contents of the output buffer are displayed after simulation.
 

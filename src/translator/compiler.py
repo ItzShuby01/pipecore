@@ -161,7 +161,8 @@ class SemanticAnalyzer:
                     f"Line {stmt.line}: Target container must resolve to int or char scalar variants.")
 
         elif isinstance(stmt, OutputStmt):
-            self.check_expr_type(stmt.expr)
+            if not isinstance(stmt.expr, StringLiteral):
+                self.check_expr_type(stmt.expr)
 
         elif isinstance(stmt, ExprStmt):
             self.check_expr_type(stmt.expr)
@@ -190,6 +191,30 @@ class SemanticAnalyzer:
             if actual_type != expected_type:
                 raise SyntaxError(
                     f"Line {stmt.line}: Return type mismatch. Expected '{expected_type}', got '{actual_type}'")
+
+    def get_expr_type(self, expr: Expr) -> str:
+        if isinstance(expr, IntLiteral):
+            return "int"
+        elif isinstance(expr, CharLiteral):
+            return "char"
+        elif isinstance(expr, BoolLiteral):
+            return "boolean"
+        elif isinstance(expr, StringLiteral):
+            return "string"
+        elif isinstance(expr, VariableExpr):
+            sym = self.current_table.lookup(expr.name)
+            return sym.type_name if sym else "void"
+        elif isinstance(expr, BinOpExpr):
+            if expr.op in {"+", "-", "*", "/", "%"}:
+                return "int"
+            else:
+                return "boolean"
+        elif isinstance(expr, CallExpr):
+            if expr.name == "input":
+                return "int"
+            sym = self.global_table.lookup(expr.name)
+            return sym.type_name if sym else "void"
+        return "void"
 
     def check_expr_type(self, expr: Expr) -> str:
         if isinstance(expr, IntLiteral):
@@ -365,12 +390,38 @@ class CodeGenerator:
                 self.emit(f"STORE R1, [R2 + {sym.stack_offset}]")
 
         elif isinstance(stmt, OutputStmt):
-            if isinstance(stmt.expr, CallExpr) and stmt.expr.name == "input":
+            if isinstance(stmt.expr, StringLiteral):
+                for ch in stmt.expr.value:
+                    self.emit(f"MOV #{ord(ch)}, R1")
+                    self.emit("OUT P1, R1")
+            elif isinstance(stmt.expr, CallExpr) and stmt.expr.name == "input":
                 self.emit("IN P0, R1")
                 self.emit("OUT P1, R1")
             else:
-                self.generate_expr(stmt.expr, "R1")
-                self.emit("OUT P1, R1")
+                expr_type = self.analyzer.get_expr_type(stmt.expr)
+                if expr_type == "string":
+                    self.generate_expr(stmt.expr, "R1")
+                    lbl_loop = self.generate_label("out_str_loop")
+                    lbl_end = self.generate_label("out_str_end")
+
+                    self.emit("LOAD [R1], R0")
+                    self.emit("CMP R0, #0")
+                    self.emit(f"JZ {lbl_end}")
+
+                    self.emit(f"{lbl_loop}:")
+                    self.emit("ADD R1, #4, R1")
+                    self.emit("PUSH R0")
+                    self.emit("LOAD [R1], R0")
+                    self.emit("OUT P1, R0")
+                    self.emit("POP R0")
+                    self.emit("SUB R0, #1, R0")
+                    self.emit("CMP R0, #0")
+                    self.emit(f"JNZ {lbl_loop}")
+
+                    self.emit(f"{lbl_end}:")
+                else:
+                    self.generate_expr(stmt.expr, "R1")
+                    self.emit("OUT P1, R1")
 
         elif isinstance(stmt, ExprStmt):
             self.generate_expr(stmt.expr, "R1")
