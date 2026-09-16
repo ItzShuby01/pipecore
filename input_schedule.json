@@ -1,3 +1,20 @@
 {
-    "events": []
+    "events": [
+        {
+            "tick": 2,
+            "token": "D"
+        },
+        {
+            "tick": 7,
+            "token": "o"
+        },
+        {
+            "tick": 13,
+            "token": "n"
+        },
+        {
+            "tick": 20,
+            "token": "e"
+        }
+    ]
 }

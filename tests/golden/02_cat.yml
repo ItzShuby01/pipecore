@@ -1,0 +1,1217 @@
+source_file: "tests/cases/02_cat/02_cat.alg"
+
+max_cycles: 100000
+trace_mode: "verbose"
+
+out_asm: |
+    JMP _start
+    _start:
+    HALT
+
+out_lst: | 
+    <address> - <HEXCODE> - <mnemonic>
+    0040      - 31100000  - JMP #0x0048
+    0044      - 00000048
+    0048      - 01000000  - HALT
+
+out_final_state: |
+    ========================================================
+    Registers Final State:
+        R0   : 0          (0x00000000)
+        R1   : 101        (0x00000065)
+        R2   : 0          (0x00000000)
+        R3   : 0          (0x00000000)
+        IP   : 76         (0x0000004C)
+        SP   : 65535      (0x0000FFFF)
+        IR   : 16777216   (0x01000000)
+        FLAGS: 16         (0x00000010)
+
+    Ports Final State
+    -----------------
+    P0 : empty
+    P1 : 'Done'
+    P2 : INPUT_READY=0
+
+    Output: Done
+    Latency: 33 cycles
+
+
+out_trace: |
+    --- PipeCore Simulation ---
+
+    [Tick 0]
+
+    Pipeline Registers
+    ------------------
+    IF : JMP @0x0040
+    ID : EMPTY
+    EX : EMPTY
+
+    IF
+    --
+    PC       : 0x0040
+    Opcode   : JMP
+    Length   : 2 words
+    Word[0]  : 0x31100000
+    Word[1]  : 0x00000048
+
+    ID
+    --
+    No instruction
+
+    EX
+    --
+    No instruction
+
+    -------------------------------------------------
+
+
+    [Tick 1]
+
+    Pipeline Registers
+    ------------------
+    IF : HALT @0x0048
+    ID : JMP @0x0040
+    EX : EMPTY
+
+    IF
+    --
+    PC       : 0x0048
+    Opcode   : HALT
+    Length   : 1 word
+    Word[0]  : 0x01000000
+
+    ID
+    --
+    Instruction   : JMP
+    Opcode        : JMP (0x31)
+    Length        : 2 words
+
+    Operand Decode
+    --------------
+    SRC : Immediate (#72)
+
+    EX
+    --
+    No instruction
+
+    -------------------------------------------------
+
+
+    [Tick 2]
+
+    TRAP
+    -----
+    Input token arrived
+    P0 <- 'D'
+    P2.INPUT_READY <- 1
+    Trap Request Raised
+
+    Pipeline Registers
+    ------------------
+    IF : EMPTY
+    ID : HALT @0x0048
+    EX : JMP @0x0040
+
+    IF
+    --
+    No instruction
+
+    ID
+    --
+    Instruction   : HALT
+    Opcode        : HALT (0x01)
+    Length        : 1 words
+
+    Operand Decode
+    --------------
+    None
+
+    EX
+    --
+    Instruction : JMP
+
+    PC <- 0x0048
+    Flush IF
+    Flush ID
+
+    -------------------------------------------------
+
+
+    Context Save
+    ------------
+    SP : FFFF -> FFFB
+    MEM[FFFB] <- IP
+    SP : FFFB -> FFF7
+    MEM[FFF7] <- FLAGS
+    FLAGS.I : 1 -> 0
+    IP <- MEM[IVT[0]]
+
+    Pipeline Flush
+    --------------
+    IF <- EMPTY
+    ID <- EMPTY
+
+    [Tick 3]
+
+    Pipeline Registers
+    ------------------
+    IF : EMPTY
+    ID : EMPTY
+    EX : EMPTY
+
+    IF
+    --
+    No instruction
+
+    ID
+    --
+    No instruction
+
+    EX
+    --
+    No instruction
+
+    -------------------------------------------------
+
+
+    [Tick 4]
+
+    Pipeline Registers
+    ------------------
+    IF : IN @0x0400
+    ID : EMPTY
+    EX : EMPTY
+
+    IF
+    --
+    PC       : 0x0400
+    Opcode   : IN
+    Length   : 3 words
+    Word[0]  : 0x50211000
+    Word[1]  : 0x00000000
+    Word[2]  : 0x00000001
+
+    ID
+    --
+    No instruction
+
+    EX
+    --
+    No instruction
+
+    -------------------------------------------------
+
+
+    [Tick 5]
+
+    Pipeline Registers
+    ------------------
+    IF : OUT @0x040C
+    ID : IN @0x0400
+    EX : EMPTY
+
+    IF
+    --
+    PC       : 0x040C
+    Opcode   : OUT
+    Length   : 3 words
+    Word[0]  : 0x51211000
+    Word[1]  : 0x00000001
+    Word[2]  : 0x00000001
+
+    ID
+    --
+    Instruction   : IN
+    Opcode        : IN (0x50)
+    Length        : 3 words
+
+    Operands
+    --------
+    Port : P0
+    Dest : R1
+
+    EX
+    --
+    No instruction
+
+    -------------------------------------------------
+
+
+    [Tick 6]
+
+    Pipeline Registers
+    ------------------
+    IF : IRET @0x0418
+    ID : OUT @0x040C
+    EX : IN @0x0400
+
+    IF
+    --
+    PC       : 0x0418
+    Opcode   : IRET
+    Length   : 1 word
+    Word[0]  : 0x42000000
+
+    ID
+    --
+    Instruction   : OUT
+    Opcode        : OUT (0x51)
+    Length        : 3 words
+
+    Operands
+    --------
+    Port : P1
+    Source : R1
+
+    EX
+    --
+    Instruction : IN
+    Port        : P0
+    Dest        : R1
+
+    R1 <- P0 ('D')
+    P2.INPUT_READY <- 0
+
+    -------------------------------------------------
+
+
+    [Tick 7]
+
+    Pending Input #1
+    ----------------
+    Input token 'o' arrived
+    Interrupts Disabled
+
+    Pipeline Registers
+    ------------------
+    IF : NOP @0x041C
+    ID : IRET @0x0418
+    EX : OUT @0x040C
+
+    IF
+    --
+    PC       : 0x041C
+    Opcode   : NOP
+    Length   : 1 word
+    Word[0]  : 0x00000000
+
+    ID
+    --
+    Instruction   : IRET
+    Opcode        : IRET (0x42)
+    Length        : 1 words
+
+    Operand Decode
+    --------------
+    None
+
+    EX
+    --
+    Instruction : OUT
+    Port        : P1
+    Source      : R1
+
+    P1 <- R1 ('D')
+
+    Output Buffer
+    -------------
+    D
+
+    -------------------------------------------------
+
+
+    [Tick 8]
+
+    Pipeline Registers
+    ------------------
+    IF : NOP @0x0420
+    ID : NOP @0x041C
+    EX : IRET @0x0418
+
+    IF
+    --
+    PC       : 0x0420
+    Opcode   : NOP
+    Length   : 1 word
+    Word[0]  : 0x00000000
+
+    ID
+    --
+    Instruction   : NOP
+    Opcode        : NOP (0x00)
+    Length        : 1 words
+
+    Operand Decode
+    --------------
+    None
+
+    EX
+    --
+    Instruction : IRET
+
+    FLAGS restored
+    IP restored
+    FLAGS.I : 0 -> 1
+
+    Returning to 0x0048
+
+    -------------------------------------------------
+
+
+    [Tick 9]
+
+    Pending Input #1 Ready
+    ----------------------
+    P2.INPUT_READY <- 1
+
+    Waiting for Interrupt Enable...
+
+    Pipeline Registers
+    ------------------
+    IF : HALT @0x0048
+    ID : EMPTY
+    EX : EMPTY
+
+    IF
+    --
+    PC       : 0x0048
+    Opcode   : HALT
+    Length   : 1 word
+    Word[0]  : 0x01000000
+
+    ID
+    --
+    No instruction
+
+    EX
+    --
+    No instruction
+
+    -------------------------------------------------
+
+
+    TRAP
+    -----
+    Pending Input #1 Accepted
+    P0 <- 'o'
+    Trap Request Raised
+
+
+    Context Save
+    ------------
+    SP : FFFF -> FFFB
+    MEM[FFFB] <- IP
+    SP : FFFB -> FFF7
+    MEM[FFF7] <- FLAGS
+    FLAGS.I : 1 -> 0
+    IP <- MEM[IVT[0]]
+
+    Pipeline Flush
+    --------------
+    IF <- EMPTY
+    ID <- EMPTY
+
+    [Tick 10]
+
+    Pipeline Registers
+    ------------------
+    IF : EMPTY
+    ID : EMPTY
+    EX : EMPTY
+
+    IF
+    --
+    No instruction
+
+    ID
+    --
+    No instruction
+
+    EX
+    --
+    No instruction
+
+    -------------------------------------------------
+
+
+    [Tick 11]
+
+    Pipeline Registers
+    ------------------
+    IF : IN @0x0400
+    ID : EMPTY
+    EX : EMPTY
+
+    IF
+    --
+    PC       : 0x0400
+    Opcode   : IN
+    Length   : 3 words
+    Word[0]  : 0x50211000
+    Word[1]  : 0x00000000
+    Word[2]  : 0x00000001
+
+    ID
+    --
+    No instruction
+
+    EX
+    --
+    No instruction
+
+    -------------------------------------------------
+
+
+    [Tick 12]
+
+    Pipeline Registers
+    ------------------
+    IF : OUT @0x040C
+    ID : IN @0x0400
+    EX : EMPTY
+
+    IF
+    --
+    PC       : 0x040C
+    Opcode   : OUT
+    Length   : 3 words
+    Word[0]  : 0x51211000
+    Word[1]  : 0x00000001
+    Word[2]  : 0x00000001
+
+    ID
+    --
+    Instruction   : IN
+    Opcode        : IN (0x50)
+    Length        : 3 words
+
+    Operands
+    --------
+    Port : P0
+    Dest : R1
+
+    EX
+    --
+    No instruction
+
+    -------------------------------------------------
+
+
+    [Tick 13]
+
+    Pending Input #2
+    ----------------
+    Input token 'n' arrived
+    P0 busy
+    Interrupts Disabled
+
+    Pipeline Registers
+    ------------------
+    IF : IRET @0x0418
+    ID : OUT @0x040C
+    EX : IN @0x0400
+
+    IF
+    --
+    PC       : 0x0418
+    Opcode   : IRET
+    Length   : 1 word
+    Word[0]  : 0x42000000
+
+    ID
+    --
+    Instruction   : OUT
+    Opcode        : OUT (0x51)
+    Length        : 3 words
+
+    Operands
+    --------
+    Port : P1
+    Source : R1
+
+    EX
+    --
+    Instruction : IN
+    Port        : P0
+    Dest        : R1
+
+    R1 <- P0 ('o')
+    P2.INPUT_READY <- 0
+
+    -------------------------------------------------
+
+
+    [Tick 14]
+
+    Pipeline Registers
+    ------------------
+    IF : NOP @0x041C
+    ID : IRET @0x0418
+    EX : OUT @0x040C
+
+    IF
+    --
+    PC       : 0x041C
+    Opcode   : NOP
+    Length   : 1 word
+    Word[0]  : 0x00000000
+
+    ID
+    --
+    Instruction   : IRET
+    Opcode        : IRET (0x42)
+    Length        : 1 words
+
+    Operand Decode
+    --------------
+    None
+
+    EX
+    --
+    Instruction : OUT
+    Port        : P1
+    Source      : R1
+
+    P1 <- R1 ('o')
+
+    Output Buffer
+    -------------
+    Do
+
+    -------------------------------------------------
+
+
+    [Tick 15]
+
+    Pipeline Registers
+    ------------------
+    IF : NOP @0x0420
+    ID : NOP @0x041C
+    EX : IRET @0x0418
+
+    IF
+    --
+    PC       : 0x0420
+    Opcode   : NOP
+    Length   : 1 word
+    Word[0]  : 0x00000000
+
+    ID
+    --
+    Instruction   : NOP
+    Opcode        : NOP (0x00)
+    Length        : 1 words
+
+    Operand Decode
+    --------------
+    None
+
+    EX
+    --
+    Instruction : IRET
+
+    FLAGS restored
+    IP restored
+    FLAGS.I : 0 -> 1
+
+    Returning to 0x0048
+
+    -------------------------------------------------
+
+
+    [Tick 16]
+
+    Pending Input #2 Ready
+    ----------------------
+    P2.INPUT_READY <- 1
+
+    Waiting for Interrupt Enable...
+
+    Pipeline Registers
+    ------------------
+    IF : HALT @0x0048
+    ID : EMPTY
+    EX : EMPTY
+
+    IF
+    --
+    PC       : 0x0048
+    Opcode   : HALT
+    Length   : 1 word
+    Word[0]  : 0x01000000
+
+    ID
+    --
+    No instruction
+
+    EX
+    --
+    No instruction
+
+    -------------------------------------------------
+
+
+    TRAP
+    -----
+    Pending Input #2 Accepted
+    P0 <- 'n'
+    Trap Request Raised
+
+
+    Context Save
+    ------------
+    SP : FFFF -> FFFB
+    MEM[FFFB] <- IP
+    SP : FFFB -> FFF7
+    MEM[FFF7] <- FLAGS
+    FLAGS.I : 1 -> 0
+    IP <- MEM[IVT[0]]
+
+    Pipeline Flush
+    --------------
+    IF <- EMPTY
+    ID <- EMPTY
+
+    [Tick 17]
+
+    Pipeline Registers
+    ------------------
+    IF : EMPTY
+    ID : EMPTY
+    EX : EMPTY
+
+    IF
+    --
+    No instruction
+
+    ID
+    --
+    No instruction
+
+    EX
+    --
+    No instruction
+
+    -------------------------------------------------
+
+
+    [Tick 18]
+
+    Pipeline Registers
+    ------------------
+    IF : IN @0x0400
+    ID : EMPTY
+    EX : EMPTY
+
+    IF
+    --
+    PC       : 0x0400
+    Opcode   : IN
+    Length   : 3 words
+    Word[0]  : 0x50211000
+    Word[1]  : 0x00000000
+    Word[2]  : 0x00000001
+
+    ID
+    --
+    No instruction
+
+    EX
+    --
+    No instruction
+
+    -------------------------------------------------
+
+
+    [Tick 19]
+
+    Pipeline Registers
+    ------------------
+    IF : OUT @0x040C
+    ID : IN @0x0400
+    EX : EMPTY
+
+    IF
+    --
+    PC       : 0x040C
+    Opcode   : OUT
+    Length   : 3 words
+    Word[0]  : 0x51211000
+    Word[1]  : 0x00000001
+    Word[2]  : 0x00000001
+
+    ID
+    --
+    Instruction   : IN
+    Opcode        : IN (0x50)
+    Length        : 3 words
+
+    Operands
+    --------
+    Port : P0
+    Dest : R1
+
+    EX
+    --
+    No instruction
+
+    -------------------------------------------------
+
+
+    [Tick 20]
+
+    Pending Input #3
+    ----------------
+    Input token 'e' arrived
+    P0 busy
+    Interrupts Disabled
+
+    Pipeline Registers
+    ------------------
+    IF : IRET @0x0418
+    ID : OUT @0x040C
+    EX : IN @0x0400
+
+    IF
+    --
+    PC       : 0x0418
+    Opcode   : IRET
+    Length   : 1 word
+    Word[0]  : 0x42000000
+
+    ID
+    --
+    Instruction   : OUT
+    Opcode        : OUT (0x51)
+    Length        : 3 words
+
+    Operands
+    --------
+    Port : P1
+    Source : R1
+
+    EX
+    --
+    Instruction : IN
+    Port        : P0
+    Dest        : R1
+
+    R1 <- P0 ('n')
+    P2.INPUT_READY <- 0
+
+    -------------------------------------------------
+
+
+    [Tick 21]
+
+    Pipeline Registers
+    ------------------
+    IF : NOP @0x041C
+    ID : IRET @0x0418
+    EX : OUT @0x040C
+
+    IF
+    --
+    PC       : 0x041C
+    Opcode   : NOP
+    Length   : 1 word
+    Word[0]  : 0x00000000
+
+    ID
+    --
+    Instruction   : IRET
+    Opcode        : IRET (0x42)
+    Length        : 1 words
+
+    Operand Decode
+    --------------
+    None
+
+    EX
+    --
+    Instruction : OUT
+    Port        : P1
+    Source      : R1
+
+    P1 <- R1 ('n')
+
+    Output Buffer
+    -------------
+    Don
+
+    -------------------------------------------------
+
+
+    [Tick 22]
+
+    Pipeline Registers
+    ------------------
+    IF : NOP @0x0420
+    ID : NOP @0x041C
+    EX : IRET @0x0418
+
+    IF
+    --
+    PC       : 0x0420
+    Opcode   : NOP
+    Length   : 1 word
+    Word[0]  : 0x00000000
+
+    ID
+    --
+    Instruction   : NOP
+    Opcode        : NOP (0x00)
+    Length        : 1 words
+
+    Operand Decode
+    --------------
+    None
+
+    EX
+    --
+    Instruction : IRET
+
+    FLAGS restored
+    IP restored
+    FLAGS.I : 0 -> 1
+
+    Returning to 0x0048
+
+    -------------------------------------------------
+
+
+    [Tick 23]
+
+    Pending Input #3 Ready
+    ----------------------
+    P2.INPUT_READY <- 1
+
+    Waiting for Interrupt Enable...
+
+    Pipeline Registers
+    ------------------
+    IF : HALT @0x0048
+    ID : EMPTY
+    EX : EMPTY
+
+    IF
+    --
+    PC       : 0x0048
+    Opcode   : HALT
+    Length   : 1 word
+    Word[0]  : 0x01000000
+
+    ID
+    --
+    No instruction
+
+    EX
+    --
+    No instruction
+
+    -------------------------------------------------
+
+
+    TRAP
+    -----
+    Pending Input #3 Accepted
+    P0 <- 'e'
+    Trap Request Raised
+
+
+    Context Save
+    ------------
+    SP : FFFF -> FFFB
+    MEM[FFFB] <- IP
+    SP : FFFB -> FFF7
+    MEM[FFF7] <- FLAGS
+    FLAGS.I : 1 -> 0
+    IP <- MEM[IVT[0]]
+
+    Pipeline Flush
+    --------------
+    IF <- EMPTY
+    ID <- EMPTY
+
+    [Tick 24]
+
+    Pipeline Registers
+    ------------------
+    IF : EMPTY
+    ID : EMPTY
+    EX : EMPTY
+
+    IF
+    --
+    No instruction
+
+    ID
+    --
+    No instruction
+
+    EX
+    --
+    No instruction
+
+    -------------------------------------------------
+
+
+    [Tick 25]
+
+    Pipeline Registers
+    ------------------
+    IF : IN @0x0400
+    ID : EMPTY
+    EX : EMPTY
+
+    IF
+    --
+    PC       : 0x0400
+    Opcode   : IN
+    Length   : 3 words
+    Word[0]  : 0x50211000
+    Word[1]  : 0x00000000
+    Word[2]  : 0x00000001
+
+    ID
+    --
+    No instruction
+
+    EX
+    --
+    No instruction
+
+    -------------------------------------------------
+
+
+    [Tick 26]
+
+    Pipeline Registers
+    ------------------
+    IF : OUT @0x040C
+    ID : IN @0x0400
+    EX : EMPTY
+
+    IF
+    --
+    PC       : 0x040C
+    Opcode   : OUT
+    Length   : 3 words
+    Word[0]  : 0x51211000
+    Word[1]  : 0x00000001
+    Word[2]  : 0x00000001
+
+    ID
+    --
+    Instruction   : IN
+    Opcode        : IN (0x50)
+    Length        : 3 words
+
+    Operands
+    --------
+    Port : P0
+    Dest : R1
+
+    EX
+    --
+    No instruction
+
+    -------------------------------------------------
+
+
+    [Tick 27]
+
+    Pipeline Registers
+    ------------------
+    IF : IRET @0x0418
+    ID : OUT @0x040C
+    EX : IN @0x0400
+
+    IF
+    --
+    PC       : 0x0418
+    Opcode   : IRET
+    Length   : 1 word
+    Word[0]  : 0x42000000
+
+    ID
+    --
+    Instruction   : OUT
+    Opcode        : OUT (0x51)
+    Length        : 3 words
+
+    Operands
+    --------
+    Port : P1
+    Source : R1
+
+    EX
+    --
+    Instruction : IN
+    Port        : P0
+    Dest        : R1
+
+    R1 <- P0 ('e')
+    P2.INPUT_READY <- 0
+
+    -------------------------------------------------
+
+
+    [Tick 28]
+
+    Pipeline Registers
+    ------------------
+    IF : NOP @0x041C
+    ID : IRET @0x0418
+    EX : OUT @0x040C
+
+    IF
+    --
+    PC       : 0x041C
+    Opcode   : NOP
+    Length   : 1 word
+    Word[0]  : 0x00000000
+
+    ID
+    --
+    Instruction   : IRET
+    Opcode        : IRET (0x42)
+    Length        : 1 words
+
+    Operand Decode
+    --------------
+    None
+
+    EX
+    --
+    Instruction : OUT
+    Port        : P1
+    Source      : R1
+
+    P1 <- R1 ('e')
+
+    Output Buffer
+    -------------
+    Done
+
+    -------------------------------------------------
+
+
+    [Tick 29]
+
+    Pipeline Registers
+    ------------------
+    IF : NOP @0x0420
+    ID : NOP @0x041C
+    EX : IRET @0x0418
+
+    IF
+    --
+    PC       : 0x0420
+    Opcode   : NOP
+    Length   : 1 word
+    Word[0]  : 0x00000000
+
+    ID
+    --
+    Instruction   : NOP
+    Opcode        : NOP (0x00)
+    Length        : 1 words
+
+    Operand Decode
+    --------------
+    None
+
+    EX
+    --
+    Instruction : IRET
+
+    FLAGS restored
+    IP restored
+    FLAGS.I : 0 -> 1
+
+    Returning to 0x0048
+
+    -------------------------------------------------
+
+
+    [Tick 30]
+
+    Pipeline Registers
+    ------------------
+    IF : HALT @0x0048
+    ID : EMPTY
+    EX : EMPTY
+
+    IF
+    --
+    PC       : 0x0048
+    Opcode   : HALT
+    Length   : 1 word
+    Word[0]  : 0x01000000
+
+    ID
+    --
+    No instruction
+
+    EX
+    --
+    No instruction
+
+    -------------------------------------------------
+
+
+    [Tick 31]
+
+    Pipeline Registers
+    ------------------
+    IF : EMPTY
+    ID : HALT @0x0048
+    EX : EMPTY
+
+    IF
+    --
+    No instruction
+
+    ID
+    --
+    Instruction   : HALT
+    Opcode        : HALT (0x01)
+    Length        : 1 words
+
+    Operand Decode
+    --------------
+    None
+
+    EX
+    --
+    No instruction
+
+    -------------------------------------------------
+
+
+    [Tick 32]
+
+    Pipeline Registers
+    ------------------
+    IF : EMPTY
+    ID : EMPTY
+    EX : HALT @0x0048
+
+    IF
+    --
+    No instruction
+
+    ID
+    --
+    No instruction
+
+    EX
+    --
+    Instruction : HALT
+
+    HALT asserted
+    Pipeline draining
+
+    -------------------------------------------------
